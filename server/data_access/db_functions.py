@@ -91,19 +91,6 @@ def add_pair(
     )
 
 def delete_collection(id):
-    # sql = """
-    # SELECT id FROM vocabulary_collections
-    # WHERE name = %s
-    # """
-
-    # rows = execute_query(
-    #     connection=CONN,
-    #     sql=sql,
-    #     params=(collection_name,)
-    # )
-    
-    # collection_id = rows[0][0]
-
     sql = f"""
     DROP TABLE vocabulary_collection_{id}
     """
