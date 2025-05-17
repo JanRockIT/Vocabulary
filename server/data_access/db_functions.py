@@ -1,281 +1,365 @@
-from server.data_access.db_components import execute_commit, execute_query
-from server.data_access.db_components import CONN
-from constants import DEFAULT_INTERVAL, START_INTERVAL
+from db_components import execute_commit, execute_query
+from constants import (
+    DATABASE_INTERVAL,
+    INTERVAL_RESET,
+    INTERVAL_START,
+    STATUS_COLLECTION_DEFAULT,
+    STATUS_PAIR_DEFAULT,
+    STATUS_DELETED
+)
 
-def new_collection(
-        name,
-        source_language,
-        target_language
-):
-    sql = """
-    INSERT INTO vocabulary_collections (name, source_language, target_language)
-    VALUES (%s, %s, %s)
+# get
+def get_collections() -> list[tuple]:
+    sql: str = """
+    SELECT *
+    FROM vocabulary_collections;
     """
 
-    execute_commit(
-        connection=CONN,
-        sql=sql,
-        params=(name, source_language, target_language)
+    rows: list[tuple] = execute_query(
+        sql=sql
     )
 
-    sql = """
-    SELECT id
+    return rows
+
+def get_collection(
+        collection_id: int
+) -> tuple:
+    sql: str = """
+    SELECT *
     FROM vocabulary_collections
-    ORDER BY id DESC
+    WHERE id = %s
     LIMIT 1;
     """
 
-    rows = execute_query(
-        connection=CONN,
+    rows: list[tuple] = execute_query(
+        sql=sql,
+        params=(collection_id,)
+    )
+
+    return rows[0] if rows else None
+
+def get_pairs(
+        collection_id: int
+) -> tuple:
+    sql: str = """
+    SELECT *
+    FROM vocabulary_pairs
+    WHERE collection_id = %s;
+    """
+
+    rows: list[tuple] = execute_query(
+        sql=sql,
+        params=(collection_id,)
+    )
+
+    return rows
+
+def get_pair(
+        collection_id: int,
+        pair_id: int
+) -> tuple:
+    sql: str = """
+    SELECT *
+    FROM vocabulary_pairs
+    WHERE collection_id = %s
+    AND id = %s
+    LIMIT 1;
+    """
+
+    params: tuple = (collection_id, pair_id)
+
+    rows: list[tuple] = execute_query(
+        sql=sql,
+        params=params
+    )
+
+    return rows[0] if rows else None
+
+def get_all_history() -> list[tuple]:
+    sql: str = """
+    SELECT *
+    FROM vocabulary_history;
+    """
+
+    rows: list[tuple] = execute_query(
         sql=sql
     )
 
-    last_id = rows[0][0] if rows else 0
+    return rows
 
-    sql = f"""
-    CREATE TABLE vocabulary_collection_{last_id} (
-        id SERIAL PRIMARY KEY,
-        source_word TEXT NOT NULL,
-        target_word TEXT NOT NULL,
-        interval INT NOT NULL
-    )
+def get_collection_history(
+        collecion_id: int
+) -> list[tuple]:
+    sql: str = """
+    SELECT *
+    FROM vocabulary_history
+    WHERE collection_id = %s;
     """
 
-    execute_commit(
-        connection=CONN,
+    rows: list[tuple] = execute_query(
         sql=sql,
+        params=(collecion_id,)
     )
 
-    sql = f"""
-    CREATE TABLE vocabulary_history_{last_id} (
-        id INT NOT NULL,
-        source_word TEXT,
-        target_word TEXT,
-        interval INT
-    )
+    return rows
+
+# add
+def add_collection(
+        collection_name: str,
+        source_language: str,
+        target_language: str
+) -> int:
+    sql: str = """
+    INSERT INTO vocabulary_collections
+    (name, source_language, target_language, status)
+    VALUES (%s, %s, %s, %s)
+    RETURNING id;
     """
 
-    execute_commit(
-        connection=CONN,
-        sql=sql
+    status: int = STATUS_COLLECTION_DEFAULT
+
+    params: tuple = (
+        collection_name,
+        source_language,
+        target_language,
+        status
     )
 
-    sql = f"""
-    INSERT INTO vocabulary_history_{last_id} (id)
-    VALUES {', '.join(['(%s)'] * DEFAULT_INTERVAL)}
-    """
-
-    params = tuple([0 for _ in range(DEFAULT_INTERVAL)])
-
-    execute_commit(
-        connection=CONN,
+    rows: list[tuple] = execute_query(
         sql=sql,
-        params=(params)
+        params=params
     )
+
+    new_id: int = rows[0][0]
+
+    return new_id
 
 def add_pair(
+        collection_id: int,
+        source_word: str,
+        target_word: str
+) -> None:
+    sql: str = """
+    INSERT INTO vocabulary_pairs
+    (collection_id, source_word, target_word, status, interval)
+    VALUES (%s, %s, %s, %s, %s);
+    """
+
+    status: int = STATUS_PAIR_DEFAULT
+    interval: int = INTERVAL_START
+
+    params: tuple = (
         collection_id,
         source_word,
         target_word,
+        status,
         interval
-):
-    sql = f"""
-    INSERT INTO vocabulary_collection_{collection_id} (source_word, target_word, interval)
-    VALUES (%s, %s, %s)
-    """
-
-    execute_commit(
-        connection=CONN,
-        sql=sql,
-        params=(source_word, target_word, interval)
     )
 
-def delete_collection(id):
-    sql = f"""
-    DROP TABLE vocabulary_collection_{id}
-    """
-
     execute_commit(
-        connection=CONN,
-        sql=sql
+        sql=sql,
+        params=params
     )
 
-    sql = """
-    DELETE FROM vocabulary_collections
-    WHERE id = %s
+def add_history(
+      collection_id: int,
+      pair_id: int  
+) -> None:
+    sql: str = """
+    INSERT INTO vocabulary_history
+    (collection_id, pair_id)
+    VALUES (%s, %s);
     """
+    
+    params: tuple = (
+        collection_id,
+        pair_id
+    )
 
     execute_commit(
-        connection=CONN,
         sql=sql,
-        params=(id,)
+        params=params
+    )
+
+# delete
+def delete_collection(
+        collection_id: int
+) -> None:
+    sql: str = """
+    UPDATE vocabulary_collections
+        SET status = %s
+    WHERE id = %s;
+    """
+
+    status: int = STATUS_DELETED
+
+    params: tuple = (
+        status,
+        collection_id
+    )
+
+    execute_commit(
+        sql=sql,
+        params=params
     )
 
 def delete_pair(
+        collection_id: int,
+        pair_id: int
+) -> None:
+    sql: str = """
+    UPDATE vocabulary_pairs
+        SET status = %s
+    WHERE collection_id = %s
+    AND id = %s;
+    """
+
+    status: int = STATUS_DELETED
+
+    params: tuple = (
+        status,
         collection_id,
         pair_id
-):
-    sql = f"""
-    DELETE FROM vocabulary_collection_{collection_id}
-    WHERE id = %s
-    """
-
-    execute_commit(
-        connection=CONN,
-        sql=sql,
-        params=(pair_id,)
     )
 
-def change_collection(
-        collection_id,
-        columns,
-        values
-):
-    set_clause = ", ".join(f"{col} = %s" for col in columns)
-
-    sql = f"""
-    UPDATE vocabulary_collections
-    SET {set_clause}
-    WHERE id = %s
-    """
-
-    params = tuple(values) + (collection_id,)
-
     execute_commit(
-        connection=CONN,
         sql=sql,
         params=params
+    )
+
+# change
+def change_collection(
+        collection_id: int,
+        columns: list[str],
+        values: list
+) -> None:
+    set_clause: str = ", ".join(f"{col} = %s" for col in columns)
+    
+    sql: str = f"""
+    UPDATE vocabulary_collections
+    SET {set_clause}
+    WHERE id = %s;
+    """
+
+    params = [*values, collection_id]
+
+    execute_commit(
+        sql=sql,
+        params=tuple(params)
     )
 
 def change_pair(
-        collection_id,
-        pair_id,
-        columns,
-        values
-):
-    set_clause = ", ".join(f"{col} = %s" for col in columns)
-
-    sql = f"""
-    UPDATE vocabulary_collection_{collection_id}
+        collection_id: int,
+        pair_id: int,
+        columns: list[str],
+        values: list
+) -> None:
+    set_clause: str = ", ".join(f"{col} = %s" for col in columns)
+    
+    sql: str = f"""
+    UPDATE vocabulary_pairs
     SET {set_clause}
-    WHERE id = %s
+    WHERE collection_id = %s
+    AND id = %s;
     """
 
-    params = tuple(values) + (pair_id,)
+    params = [*values, collection_id, pair_id]
 
     execute_commit(
-        connection=CONN,
+        sql=sql,
+        params=tuple(params)
+    )
+
+# update pair
+def update_pair(
+        collection_id: int,
+        pair_id: int,
+        known: bool
+) -> None:
+    sql: str = """
+    SELECT interval
+    FROM vocabulary_pairs
+    WHERE collection_id = %s
+    AND id = %s
+    LIMIT 1;
+    """
+
+    params: tuple = (
+        collection_id,
+        pair_id
+    )
+
+    rows: list[tuple] = execute_query(
         sql=sql,
         params=params
     )
 
-def get_collections():
-    sql = """
-    SELECT * FROM vocabulary_collections
-    """
+    interval: int = rows[0][0] if rows else None
 
-    rows = execute_query(
-        connection=CONN,
-        sql=sql
-    )
-
-    return rows
-
-def get_collection(id):
-    sql = f"""
-    SELECT * FROM vocabulary_collection_{id}
-    """
-
-    rows = execute_query(
-        connection=CONN,
-        sql=sql
-    )
-
-    return rows
-
-def get_pair(collection_id):
-    sql = f"""
-    SELECT * FROM vocabulary_collection_{collection_id}
-    """
-
-    rows = execute_query(
-        connection=CONN,
-        sql=sql
-    )
-
-    vocabulary_collection = rows
-
-    sql = f"""
-    SELECT * FROM vocabulary_history_{collection_id}
-    """
-
-    rows = execute_query(
-        connection=CONN,
-        sql=sql
-    )
-
-    vocabulary_history = rows
-
-    for vocabulary_pair in vocabulary_collection:
-        if vocabulary_pair not in vocabulary_history:
-            lowest_interval_pair = vocabulary_pair
-            break
-
-    for vocabulary_pair in vocabulary_collection:
-        if vocabulary_pair[3] < lowest_interval_pair[3] and vocabulary_pair not in vocabulary_history:
-            lowest_interval_pair = vocabulary_pair
-
-    sql = f"""
-    DELETE FROM vocabulary_history_{collection_id}
-        WHERE ctid = (
-        SELECT ctid
-        FROM vocabulary_history_{collection_id}
-        LIMIT 1
-    );    
-    """
-
-    execute_commit(
-        connection=CONN,
-        sql=sql
-    )
-
-    sql = f"""
-    INSERT INTO vocabulary_history_{collection_id} (id, source_word, target_word, interval)
-    VALUES (%s, %s, %s, %s)
-    """
-
-    execute_commit(
-        connection=CONN,
-        sql=sql,
-        params=lowest_interval_pair
-    )
-
-    return lowest_interval_pair
-
-def update_pair(
-        collection_id,
-        pair_id,
-        known
-):
-    sql = f"""
-    SELECT interval
-    FROM vocabulary_collection_{collection_id}
-    WHERE id = (%s)
-    """
-
-    rows = execute_query(
-        connection=CONN,
-        sql=sql,
-        params=(pair_id,)
-    )
+    new_interval: int = interval + 1 if known else INTERVAL_RESET
     
-    interval = rows[0][0]
-
-    updated_interval = interval + 1 if known else START_INTERVAL
-
     change_pair(
         collection_id=collection_id,
-        columns=['interval'],
         pair_id=pair_id,
-        values=[updated_interval]
+        columns=['interval'],
+        values=[new_interval]
     )
+
+# get next pair
+def get_next_pair(
+        collection_id: int
+) -> tuple:
+    sql: str = """
+    SELECT pair_id, created_at
+    FROM vocabulary_history
+    WHERE collection_id = %s
+    ORDER BY created_at;
+    """
+
+    rows: list[tuple] = execute_query(
+        sql=sql,
+        params=(collection_id,)
+    )
+
+    history: list[tuple] = rows
+    last_history_ids: list[int] = [h[0] for h in history[-DATABASE_INTERVAL:]]
+
+    sql: str = """
+    SELECT id, interval
+    FROM vocabulary_pairs
+    WHERE collection_id = %s;
+    """
+
+    rows: list[tuple] = execute_query(
+        sql=sql,
+        params=(collection_id,)
+    )
+
+    pairs: list[tuple] = rows
+
+    for pid, interv in pairs:
+        if pid not in last_history_ids:
+            lowest_id, lowest_interval = pid, interv
+            break
+
+    for pid, interv in pairs:
+        if pid not in last_history_ids and interv < lowest_interval:
+            lowest_id, lowest_interval = pid, interv
+
+    sql: str = """
+    INSERT INTO vocabulary_history
+    (collection_id, pair_id)
+    VALUES (%s, %s);
+    """
+
+    params: tuple = (
+        collection_id,
+        lowest_id
+    )
+
+    execute_commit(
+        sql=sql,
+        params=params
+    )
+
+    return lowest_id, lowest_interval
