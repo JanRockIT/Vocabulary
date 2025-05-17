@@ -1,5 +1,5 @@
 import psycopg2
-from constants import DATABASE_URL
+from .constants import DATABASE_URL
 
 URL = DATABASE_URL
 CONN = psycopg2.connect(URL)

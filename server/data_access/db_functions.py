@@ -1,5 +1,5 @@
-from db_components import execute_commit, execute_query
-from constants import (
+from .db_components import execute_commit, execute_query
+from .constants import (
     DATABASE_INTERVAL,
     INTERVAL_RESET,
     INTERVAL_START,
