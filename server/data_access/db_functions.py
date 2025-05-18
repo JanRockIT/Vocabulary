@@ -305,6 +305,20 @@ def update_pair(
         values=[new_interval]
     )
 
+# start lerning
+def start_learning(
+        collection_id: int
+) -> None:
+    sql: str = """
+    UPDATE vocabulary_collections
+       SET times_lerned = times_lerned + 1
+     WHERE id = %s;
+    """
+    execute_commit(
+        sql=sql,
+        params=(collection_id,)
+    )
+
 # get next pair
 def get_next_pair(
         collection_id: int
