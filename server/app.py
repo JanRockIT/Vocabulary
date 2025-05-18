@@ -20,7 +20,7 @@ from data_access.db_functions import (
 )
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/collections', methods=['GET'])
 def collections():
