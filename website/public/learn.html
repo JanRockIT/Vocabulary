@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary - Learning Mode</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="learning-container">
+        <div class="learning-header">
+            <div class="learning-title" id="learningTitle">Learning: Collection Name</div>
+            <a href="#" class="learning-close" id="closeLearningBtn"><i class="fas fa-times"></i></a>
+        </div>
+        
+        <!-- Loading State -->
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+        </div>
+        
+        <div class="learning-content" id="learningContent" style="display: none;">
+            <div class="learning-language" id="learningLanguage">Source</div>
+            <div class="learning-word" id="learningWord">Loading...</div>
+            <div class="learning-toggle" id="learningToggleBtn">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Show Translation</span>
+            </div>
+            <div class="learning-actions">
+                <button class="learning-btn btn-no" id="learningNoBtn">
+                    <i class="fas fa-times"></i>
+                    No
+                </button>
+                <button class="learning-btn btn-yes" id="learningYesBtn">
+                    <i class="fas fa-check"></i>
+                    Yes
+                </button>
+            </div>
+        </div>
+        
+        <!-- Completion State -->
+        <div class="learning-content" id="completionState" style="display: none;">
+            <i class="fas fa-trophy" style="font-size: 4rem; color: var(--success-color); margin-bottom: 20px;"></i>
+            <div class="learning-word" id="completionMessage">All Done!</div>
+            <p style="color: var(--text-color-light); margin-bottom: 30px;">You've finished learning all the words in this collection.</p>
+            <a href="#" class="btn btn-primary" id="backToCollectionBtn">Back to Collection</a>
+        </div>
+        
+        <div class="learning-progress">
+            <div class="learning-progress-bar" id="learningProgressBar"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Get collection ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionId = urlParams.get('id');
+        
+        // If no collection ID is provided, redirect to collections page
+        if (!collectionId) {
+            window.location.href = 'index.html';
+        }
+        
+        // Learning state variables
+        let currentPairs = [];
+        let currentIndex = 0;
+        let isShowingTranslation = false;
+        let collectionName = '';
+        let sourceLang = '';
+        let targetLang = '';
+        
+        // Initialize learning mode
+        async function initLearningMode() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const learningContent = document.getElementById('learningContent');
+            const completionState = document.getElementById('completionState');
+            
+            // Show loading
+            loadingContainer.style.display = 'flex';
+            learningContent.style.display = 'none';
+            completionState.style.display = 'none';
+            
+            try {
+                // Start learning mode on the server
+                await startLearningCollection(collectionId);
+                
+                // Fetch collection details
+                const collectionData = await getCollection(collectionId);
+                if (!collectionData) {
+                    showToast('Collection not found.', 'error');
+                    returnToCollection();
+                    return;
+                }
+                
+                // Format of collection: [name, sourceLang, targetLang, ...]
+                [collectionName, sourceLang, targetLang] = collectionData;
+                
+                // Update learning title
+                document.getElementById('learningTitle').textContent = `Learning: ${collectionName}`;
+                
+                // Fetch all pairs for the collection
+                const pairsData = await getPairs(collectionId);
+                
+                // Get only pairs that are not learned yet
+                const unlearned = pairsData.filter(pair => !pair[3]);
+                
+                if (unlearned.length === 0) {
+                    // All pairs are already learned
+                    loadingContainer.style.display = 'none';
+                    completionState.style.display = 'flex';
+                    document.getElementById('completionMessage').textContent = 'All Words Learned!';
+                } else {
+                    // Shuffle pairs for randomized learning
+                    currentPairs = unlearned.sort(() => Math.random() - 0.5);
+                    currentIndex = 0;
+                    
+                    // Hide loading and show learning content
+                    loadingContainer.style.display = 'none';
+                    learningContent.style.display = 'flex';
+                    
+                    // Show first pair
+                    showCurrentPair();
+                }
+            } catch (error) {
+                console.error('Error initializing learning mode:', error);
+                loadingContainer.style.display = 'none';
+                showToast('Failed to initialize learning mode. Please try again.', 'error');
+                returnToCollection();
+            }
+        }
+        
+        // Show the current pair
+        function showCurrentPair() {
+            if (currentIndex >= currentPairs.length) {
+                // Learning complete
+                document.getElementById('learningContent').style.display = 'none';
+                document.getElementById('completionState').style.display = 'flex';
+                document.getElementById('learningProgressBar').style.width = '100%';
+                return;
+            }
+            
+            const pair = currentPairs[currentIndex];
+            const [pairId, sourceWord, targetWord] = pair;
+            
+            // Reset to showing source word
+            isShowingTranslation = false;
+            document.getElementById('learningLanguage').textContent = sourceLang;
+            document.getElementById('learningWord').textContent = sourceWord;
+            document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Translation';
+            
+            // Update progress bar
+            const progress = (currentIndex / currentPairs.length) * 100;
+            document.getElementById('learningProgressBar').style.width = `${progress}%`;
+        }
+        
+        // Toggle between source and target word
+        function toggleTranslation() {
+            if (currentIndex >= currentPairs.length) return;
+            
+            const pair = currentPairs[currentIndex];
+            const [, sourceWord, targetWord] = pair;
+            
+            if (isShowingTranslation) {
+                // Show source word
+                document.getElementById('learningLanguage').textContent = sourceLang;
+                document.getElementById('learningWord').textContent = sourceWord;
+                document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Translation';
+            } else {
+                // Show target word
+                document.getElementById('learningLanguage').textContent = targetLang;
+                document.getElementById('learningWord').textContent = targetWord;
+                document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Source';
+            }
+            
+            isShowingTranslation = !isShowingTranslation;
+        }
+        
+        // Handle "Yes" button click (word is learned)
+        async function handleYesClick() {
+            if (currentIndex >= currentPairs.length) return;
+            
+            const pair = currentPairs[currentIndex];
+            const [pairId] = pair;
+            
+            try {
+                // Mark pair as learned
+                await updatePairStatus(collectionId, pairId, true);
+                
+                // Record learning history
+                await addLearningHistory(collectionId, pairId);
+                
+                // Move to next pair
+                currentIndex++;
+                showCurrentPair();
+            } catch (error) {
+                console.error('Error marking pair as learned:', error);
+                showToast('Failed to update learning status.', 'error');
+            }
+        }
+        
+        // Handle "No" button click (word is not learned yet)
+        function handleNoClick() {
+            if (currentIndex >= currentPairs.length) return;
+            
+            // Just move to next pair without marking as learned
+            currentIndex++;
+            showCurrentPair();
+        }
+        
+        // Return to collection details page
+        function returnToCollection() {
+            window.location.href = `collection.html?id=${collectionId}`;
+        }
+        
+        // Initialize event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close button event
+            document.getElementById('closeLearningBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToCollection();
+            });
+            
+            // Toggle translation button event
+            document.getElementById('learningToggleBtn').addEventListener('click', toggleTranslation);
+            
+            // Yes button event
+            document.getElementById('learningYesBtn').addEventListener('click', handleYesClick);
+            
+            // No button event
+            document.getElementById('learningNoBtn').addEventListener('click', handleNoClick);
+            
+            // Back to collection button event
+            document.getElementById('backToCollectionBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                returnToCollection();
+            });
+            
+            // Initialize learning mode
+            initLearningMode();
+        });
+    </script>
+</body>
+</html>

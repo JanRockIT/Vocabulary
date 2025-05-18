@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary - Collection Details</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Collection Header -->
+        <div class="collection-header">
+            <div class="collection-info">
+                <a href="index.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Collections
+                </a>
+                <h1 class="collection-header-title" id="collectionTitle">Loading collection...</h1>
+                <div class="collection-header-subtitle" id="collectionSubtitle"></div>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn start-learning-btn" id="startLearningBtn">
+                    <i class="fas fa-graduation-cap"></i>
+                    Start Learning
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Pairs Container -->
+        <div class="pairs-container" id="pairsContainer" style="display: none;">
+            <div class="pairs-header">
+                <div class="pairs-title">Word Pairs</div>
+                <button class="btn btn-primary" id="addPairBtn">
+                    <i class="fas fa-plus"></i>
+                    Add Pair
+                </button>
+            </div>
+            <table class="pairs-table">
+                <thead>
+                    <tr>
+                        <th>Source Word</th>
+                        <th>Target Word</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pairsTableBody">
+                    <!-- Pairs will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty Pairs State -->
+        <div class="empty-state" id="emptyPairsState" style="display: none;">
+            <i class="fas fa-language empty-icon"></i>
+            <h2 class="empty-title">No word pairs yet</h2>
+            <p class="empty-description">Add some word pairs to start learning!</p>
+            <button class="action-btn create-collection-btn" id="addFirstPairBtn">
+                <i class="fas fa-plus"></i>
+                Add First Pair
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Add Pair Modal -->
+    <div class="modal-overlay" id="addPairModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Word Pair</h3>
+                <i class="fas fa-times modal-close" data-close="addPairModal"></i>
+            </div>
+            <div class="modal-body">
+                <form id="addPairForm">
+                    <div class="form-group">
+                        <label for="sourceWord">Source Word</label>
+                        <input type="text" class="form-control" id="sourceWord" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="targetWord">Target Word</label>
+                        <input type="text" class="form-control" id="targetWord" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="addPairModal">Cancel</button>
+                <button class="btn btn-primary" id="savePairBtn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Pair Modal -->
+    <div class="modal-overlay" id="editPairModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Word Pair</h3>
+                <i class="fas fa-times modal-close" data-close="editPairModal"></i>
+            </div>
+            <div class="modal-body">
+                <form id="editPairForm">
+                    <input type="hidden" id="editPairId">
+                    <div class="form-group">
+                        <label for="editSourceWord">Source Word</label>
+                        <input type="text" class="form-control" id="editSourceWord" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTargetWord">Target Word</label>
+                        <input type="text" class="form-control" id="editTargetWord" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="editPairModal">Cancel</button>
+                <button class="btn btn-primary" id="updatePairBtn">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Pair Modal -->
+    <div class="modal-overlay" id="deletePairModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Word Pair</h3>
+                <i class="fas fa-times modal-close" data-close="deletePairModal"></i>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="deletePairId">
+                <p>Are you sure you want to delete this word pair?</p>
+                <p><strong>Source Word:</strong> <span id="deletePairSourceWord"></span></p>
+                <p><strong>Target Word:</strong> <span id="deletePairTargetWord"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="deletePairModal">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeletePairBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Get collection ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionId = urlParams.get('id');
+        
+        // If no collection ID is provided, redirect to collections page
+        if (!collectionId) {
+            window.location.href = 'index.html';
+        }
+        
+        // Function to load collection details
+        async function loadCollectionDetails() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const collectionTitle = document.getElementById('collectionTitle');
+            const collectionSubtitle = document.getElementById('collectionSubtitle');
+            
+            // Show loading
+            loadingContainer.style.display = 'flex';
+            
+            try {
+                // Fetch collection details
+                const collectionData = await getCollection(collectionId);
+                
+                if (!collectionData) {
+                    showToast('Collection not found.', 'error');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // Format of collection: [name, sourceLang, targetLang, totalLearned, progressPercent, learnedRatio, totalWords, collectionId, date]
+                const [name, sourceLang, targetLang] = collectionData;
+                
+                // Update collection title and subtitle
+                collectionTitle.textContent = name;
+                collectionSubtitle.textContent = `${sourceLang} → ${targetLang}`;
+                
+                // Load word pairs
+                await loadPairs();
+                
+            } catch (error) {
+                console.error('Error loading collection details:', error);
+                showToast('Failed to load collection details. Please try again.', 'error');
+            }
+        }
+        
+        // Function to load pairs for the collection
+        async function loadPairs() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const pairsContainer = document.getElementById('pairsContainer');
+            const emptyPairsState = document.getElementById('emptyPairsState');
+            const pairsTableBody = document.getElementById('pairsTableBody');
+            
+            try {
+                // Fetch pairs for the collection
+                const pairsData = await getPairs(collectionId);
+                
+                // Hide loading
+                loadingContainer.style.display = 'none';
+                
+                if (pairsData.length === 0) {
+                    // Show empty state if no pairs
+                    pairsContainer.style.display = 'none';
+                    emptyPairsState.style.display = 'block';
+                } else {
+                    // Show pairs and populate table
+                    pairsContainer.style.display = 'block';
+                    emptyPairsState.style.display = 'none';
+                    
+                    // Clear existing pairs
+                    pairsTableBody.innerHTML = '';
+                    
+                    // Add pairs to table
+                    pairsData.forEach(pair => {
+                        const [pairId, sourceWord, targetWord, learned] = pair;
+                        const row = document.createElement('tr');
+                        row.dataset.id = pairId;
+                        
+                        row.innerHTML = `
+                            <td>${sourceWord}</td>
+                            <td>${targetWord}</td>
+                            <td>
+                                <span class="pair-status ${learned ? 'learned' : 'not-learned'}">
+                                    ${learned ? 'Learned' : 'Not Learned'}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="pair-actions">
+                                    <i class="fas fa-edit action-icon" title="Edit Pair"></i>
+                                    <i class="fas fa-trash action-icon" title="Delete Pair"></i>
+                                </div>
+                            </td>
+                        `;
+                        
+                        pairsTableBody.appendChild(row);
+                        
+                        // Add event listeners for edit and delete buttons
+                        const editBtn = row.querySelector('.fa-edit');
+                        const deleteBtn = row.querySelector('.fa-trash');
+                        
+                        editBtn.addEventListener('click', function() {
+                            openEditPairModal(pairId, sourceWord, targetWord);
+                        });
+                        
+                        deleteBtn.addEventListener('click', function() {
+                            openDeletePairModal(pairId, sourceWord, targetWord);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading pairs:', error);
+                loadingContainer.style.display = 'none';
+                showToast('Failed to load word pairs. Please try again.', 'error');
+            }
+        }
+        
+        // Function to open edit pair modal
+        function openEditPairModal(pairId, sourceWord, targetWord) {
+            document.getElementById('editPairId').value = pairId;
+            document.getElementById('editSourceWord').value = sourceWord;
+            document.getElementById('editTargetWord').value = targetWord;
+            
+            openModal('editPairModal');
+        }
+        
+        // Function to open delete pair modal
+        function openDeletePairModal(pairId, sourceWord, targetWord) {
+            document.getElementById('deletePairId').value = pairId;
+            document.getElementById('deletePairSourceWord').textContent = sourceWord;
+            document.getElementById('deletePairTargetWord').textContent = targetWord;
+            
+            openModal('deletePairModal');
+        }
+        
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize modal close buttons
+            const modalCloseButtons = document.querySelectorAll('.modal-close, .btn[data-close]');
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modalId = this.getAttribute('data-close');
+                    closeModal(modalId);
+                });
+            });
+            
+            // Add Pair button event
+            document.getElementById('addPairBtn').addEventListener('click', function() {
+                document.getElementById('addPairForm').reset();
+                openModal('addPairModal');
+            });
+            
+            // Add First Pair button (empty state)
+            document.getElementById('addFirstPairBtn').addEventListener('click', function() {
+                document.getElementById('addPairForm').reset();
+                openModal('addPairModal');
+            });
+            
+            // Save Pair button event
+            document.getElementById('savePairBtn').addEventListener('click', async function() {
+                const sourceWord = document.getElementById('sourceWord').value;
+                const targetWord = document.getElementById('targetWord').value;
+                
+                if (!sourceWord || !targetWord) {
+                    showToast('Please fill in both words', 'error');
+                    return;
+                }
+                
+                const success = await addPair(collectionId, sourceWord, targetWord);
+                if (success) {
+                    closeModal('addPairModal');
+                    await loadPairs();
+                }
+            });
+            
+            // Update Pair button event
+            document.getElementById('updatePairBtn').addEventListener('click', async function() {
+                const pairId = document.getElementById('editPairId').value;
+                const sourceWord = document.getElementById('editSourceWord').value;
+                const targetWord = document.getElementById('editTargetWord').value;
+                
+                if (!sourceWord || !targetWord) {
+                    showToast('Please fill in both words', 'error');
+                    return;
+                }
+                
+                const success = await updatePair(collectionId, pairId, sourceWord, targetWord);
+                if (success) {
+                    closeModal('editPairModal');
+                    await loadPairs();
+                }
+            });
+            
+            // Delete Pair button event
+            document.getElementById('confirmDeletePairBtn').addEventListener('click', async function() {
+                const pairId = document.getElementById('deletePairId').value;
+                
+                const success = await deletePair(collectionId, pairId);
+                if (success) {
+                    closeModal('deletePairModal');
+                    await loadPairs();
+                }
+            });
+            
+            // Start Learning button event
+            document.getElementById('startLearningBtn').addEventListener('click', function() {
+                window.location.href = `learn.html?id=${collectionId}`;
+            });
+            
+            // Load collection details
+            loadCollectionDetails();
+        });
+    </script>
+</body>
+</html>

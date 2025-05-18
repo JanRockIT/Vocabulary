@@ -3,38 +3,367 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocabulary</title>
+    <title>Vocabulary - Collections</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Add Roboto font -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #4361ee;
-            --primary-color-dark: #3a56d4;
-            --secondary-color: #7209b7;
-            --secondary-color-dark: #6208a1;
-            --accent-color: #3a86ff;
-            --bg-color: #121212;
-            --bg-color-light: #1e1e1e;
-            --card-bg: #1e1e1e;
-            --card-hover: #2a2a2a;
-            --text-color: #f8f9fa;
-            --text-color-light: #b0b0b0;
-            --text-color-dark: #333333;
-            --success-color: #4ade80;
-            --success-color-dark: #3abe70;
-            --warning-color: #fbbf24;
-            --danger-color: #ef4444;
-            --danger-color-dark: #dc2626;
-            --info-color: #3b82f6;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --input-bg-color: #2a2a2a;
-            --border-radius: 12px;
-            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header Section -->
+        <div class="app-header">
+            <h1 class="app-title">vocabulary</h1>
+            <div class="header-actions">
+                <button class="action-btn create-collection-btn" id="createCollectionBtn">
+                    <i class="fas fa-plus"></i>
+                    Create Collection
+                </button>
+                <i class="fas fa-cog settings-icon" id="settingsBtn"></i>
+            </div>
+        </div>
 
-        * {
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <span class="filter-label">Filter by:</span>
+            <div class="filter-options">
+                <button class="filter-option active" data-sort="recent">Recent</button>
+                <button class="filter-option" data-sort="alphabetical">Alphabetical</button>
+                <button class="filter-option" data-sort="progress">Progress</button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <i class="fas fa-book-open empty-icon"></i>
+            <h2 class="empty-title">No collections yet</h2>
+            <p class="empty-description">Create your first collection to get started!</p>
+            <button class="action-btn create-collection-btn" id="createCollectionBtnEmpty">
+                <i class="fas fa-plus"></i>
+                Create Collection
+            </button>
+        </div>
+
+        <!-- Collections Grid -->
+        <div class="collections-grid" id="collectionsGrid"></div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Create Collection Modal -->
+    <div class="modal-overlay" id="createCollectionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Collection</h3>
+                <i class="fas fa-times modal-close" data-close="createCollectionModal"></i>
+            </div>
+            <div class="modal-body">
+                <form id="createCollectionForm">
+                    <div class="form-group">
+                        <label for="collectionName">Collection Name</label>
+                        <input type="text" class="form-control" id="collectionName" placeholder="e.g. Unit 1, Lesson 5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sourceLanguage">Source Language</label>
+                        <input type="text" class="form-control" id="sourceLanguage" placeholder="e.g. English" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="targetLanguage">Target Language</label>
+                        <input type="text" class="form-control" id="targetLanguage" placeholder="e.g. Spanish" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="createCollectionModal">Cancel</button>
+                <button class="btn btn-primary" id="saveCollectionBtn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Collection Modal -->
+    <div class="modal-overlay" id="editCollectionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Collection</h3>
+                <i class="fas fa-times modal-close" data-close="editCollectionModal"></i>
+            </div>
+            <div class="modal-body">
+                <form id="editCollectionForm">
+                    <input type="hidden" id="editCollectionId">
+                    <div class="form-group">
+                        <label for="editCollectionName">Collection Name</label>
+                        <input type="text" class="form-control" id="editCollectionName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSourceLanguage">Source Language</label>
+                        <input type="text" class="form-control" id="editSourceLanguage" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTargetLanguage">Target Language</label>
+                        <input type="text" class="form-control" id="editTargetLanguage" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="editCollectionModal">Cancel</button>
+                <button class="btn btn-primary" id="updateCollectionBtn">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Collection Modal -->
+    <div class="modal-overlay" id="deleteCollectionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Collection</h3>
+                <i class="fas fa-times modal-close" data-close="deleteCollectionModal"></i>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="deleteCollectionId">
+                <p>Are you sure you want to delete the collection <span id="deleteCollectionName"></span>?</p>
+                <p>This action cannot be undone and all word pairs in this collection will be lost.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="deleteCollectionModal">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteCollectionBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Function to load collections from the API
+        async function loadCollections() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            const emptyState = document.getElementById('emptyState');
+            const collectionsGrid = document.getElementById('collectionsGrid');
+            
+            // Show loading
+            loadingContainer.style.display = 'flex';
+            emptyState.style.display = 'none';
+            collectionsGrid.style.display = 'none';
+            collectionsGrid.innerHTML = '';
+            
+            try {
+                // Fetch collections from the API
+                const collectionsData = await getCollections();
+                
+                // Hide loading
+                loadingContainer.style.display = 'none';
+                
+                if (collectionsData.length === 0) {
+                    // Show empty state if no collections
+                    emptyState.style.display = 'block';
+                } else {
+                    // Populate the grid with collections
+                    collectionsGrid.style.display = 'grid';
+                    
+                    collectionsData.forEach(collection => {
+                        const card = createCollectionCard(collection);
+                        collectionsGrid.appendChild(card);
+                        
+                        // Add click event to the card
+                        card.addEventListener('click', function(e) {
+                            // Ignore clicks on edit/delete buttons
+                            if (e.target.classList.contains('edit-collection-btn') || 
+                                e.target.classList.contains('delete-collection-btn')) {
+                                return;
+                            }
+                            
+                            // Navigate to collection details page
+                            const collectionId = this.dataset.id;
+                            window.location.href = `collection.html?id=${collectionId}`;
+                        });
+                        
+                        // Add event listeners for edit and delete buttons
+                        const editBtn = card.querySelector('.edit-collection-btn');
+                        const deleteBtn = card.querySelector('.delete-collection-btn');
+                        
+                        editBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const collectionId = card.dataset.id;
+                            const title = card.querySelector('.collection-title').textContent;
+                            const fromLang = card.querySelector('.collection-languages').textContent.split('→')[0].trim();
+                            const toLang = card.querySelector('.collection-languages').textContent.split('→')[1].trim();
+                            
+                            // Set form values
+                            document.getElementById('editCollectionId').value = collectionId;
+                            document.getElementById('editCollectionName').value = title;
+                            document.getElementById('editSourceLanguage').value = fromLang;
+                            document.getElementById('editTargetLanguage').value = toLang;
+                            
+                            openModal('editCollectionModal');
+                        });
+                        
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const collectionId = card.dataset.id;
+                            const title = card.querySelector('.collection-title').textContent;
+                            
+                            // Set modal content
+                            document.getElementById('deleteCollectionId').value = collectionId;
+                            document.getElementById('deleteCollectionName').textContent = title;
+                            
+                            openModal('deleteCollectionModal');
+                        });
+                    });
+                    
+                    // Apply current filter
+                    const activeFilter = document.querySelector('.filter-option.active');
+                    if (activeFilter) {
+                        sortCollections(activeFilter.dataset.sort);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading collections:', error);
+                // Hide loading and show empty state on error
+                loadingContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                showToast('Error loading collections. Please try again.', 'error');
+            }
+        }
+        
+        // Function to sort collections
+        function sortCollections(sortBy) {
+            const collectionsGrid = document.getElementById('collectionsGrid');
+            const cards = Array.from(collectionsGrid.querySelectorAll('.collection-card'));
+            
+            if (cards.length === 0) return;
+            
+            cards.sort((a, b) => {
+                if (sortBy === 'alphabetical') {
+                    // Sort by title
+                    const titleA = a.querySelector('.collection-title').textContent.toLowerCase();
+                    const titleB = b.querySelector('.collection-title').textContent.toLowerCase();
+                    return titleA.localeCompare(titleB);
+                } else if (sortBy === 'recent') {
+                    // Sort by date (most recent first)
+                    const dateA = new Date(a.querySelector('.collection-date').textContent);
+                    const dateB = new Date(b.querySelector('.collection-date').textContent);
+                    return dateB - dateA;
+                } else if (sortBy === 'progress') {
+                    // Sort by progress (highest first)
+                    const progressA = parseInt(a.querySelector('.collection-progress').textContent);
+                    const progressB = parseInt(b.querySelector('.collection-progress').textContent);
+                    return progressB - progressA;
+                }
+                return 0;
+            });
+            
+            // Clear grid and re-append sorted cards
+            collectionsGrid.innerHTML = '';
+            cards.forEach(card => collectionsGrid.appendChild(card));
+        }
+        
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize modal close buttons
+            const modalCloseButtons = document.querySelectorAll('.modal-close, .btn[data-close]');
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modalId = this.getAttribute('data-close');
+                    closeModal(modalId);
+                });
+            });
+            
+            // Create Collection button event
+            document.getElementById('createCollectionBtn').addEventListener('click', function() {
+                document.getElementById('createCollectionForm').reset();
+                openModal('createCollectionModal');
+            });
+            
+            // Empty state Create Collection button
+            document.getElementById('createCollectionBtnEmpty').addEventListener('click', function() {
+                document.getElementById('createCollectionForm').reset();
+                openModal('createCollectionModal');
+            });
+            
+            // Save Collection button event
+            document.getElementById('saveCollectionBtn').addEventListener('click', async function() {
+                const name = document.getElementById('collectionName').value;
+                const sourceLang = document.getElementById('sourceLanguage').value;
+                const targetLang = document.getElementById('targetLanguage').value;
+                
+                if (!name || !sourceLang || !targetLang) {
+                    showToast('Please fill in all fields', 'error');
+                    return;
+                }
+                
+                const collectionId = await createCollection(name, sourceLang, targetLang);
+                if (collectionId) {
+                    closeModal('createCollectionModal');
+                    loadCollections(); // Reload collections
+                }
+            });
+            
+            // Update Collection button event
+            document.getElementById('updateCollectionBtn').addEventListener('click', async function() {
+                const collectionId = document.getElementById('editCollectionId').value;
+                const name = document.getElementById('editCollectionName').value;
+                const sourceLang = document.getElementById('editSourceLanguage').value;
+                const targetLang = document.getElementById('editTargetLanguage').value;
+                
+                if (!name || !sourceLang || !targetLang) {
+                    showToast('Please fill in all fields', 'error');
+                    return;
+                }
+                
+                const success = await updateCollection(collectionId, {
+                    collection_name: name,
+                    source_language: sourceLang,
+                    target_language: targetLang
+                });
+                
+                if (success) {
+                    closeModal('editCollectionModal');
+                    loadCollections(); // Reload collections
+                }
+            });
+            
+            // Delete Collection button event
+            document.getElementById('confirmDeleteCollectionBtn').addEventListener('click', async function() {
+                const collectionId = document.getElementById('deleteCollectionId').value;
+                
+                const success = await deleteCollection(collectionId);
+                if (success) {
+                    closeModal('deleteCollectionModal');
+                    loadCollections(); // Reload collections
+                }
+            });
+            
+            // Filter options click event
+            const filterOptions = document.querySelectorAll('.filter-option');
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    filterOptions.forEach(opt => opt.classList.remove('active'));
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    // Sort collections
+                    sortCollections(this.dataset.sort);
+                });
+            });
+            
+            // Settings button event
+            document.getElementById('settingsBtn').addEventListener('click', function() {
+                showToast('Settings feature coming soon!', 'info');
+            });
+            
+            // Load collections
+            loadCollections();
+        });
+    </script>
+</body>
+</html>
             margin: 0;
             padding: 0;
             box-sizing: border-box;
