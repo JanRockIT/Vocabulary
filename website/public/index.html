@@ -1,35 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocabulary - Collections</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vokabel-App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/mobile.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Header Section -->
+        <!-- App Header -->
         <div class="app-header">
-            <h1 class="app-title">vocabulary</h1>
-            <div class="header-actions">
-                <button class="action-btn create-collection-btn" id="createCollectionBtn">
-                    <i class="fas fa-plus"></i>
-                    Create Collection
-                </button>
-                <i class="fas fa-cog settings-icon" id="settingsBtn"></i>
-            </div>
+            <h1 class="app-title">Vokabel-App</h1>
+            <button class="add-btn" id="createCollectionBtn">
+                <i class="fas fa-plus"></i>
+            </button>
         </div>
 
-        <!-- Filters Section -->
-        <div class="filters-section">
-            <span class="filter-label">Filter by:</span>
-            <div class="filter-options">
-                <button class="filter-option active" data-sort="recent">Recent</button>
-                <button class="filter-option" data-sort="alphabetical">Alphabetical</button>
-                <button class="filter-option" data-sort="progress">Progress</button>
-            </div>
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-tab active" data-filter="all">Alle</div>
+            <div class="status-tab" data-filter="recent">Kürzlich</div>
+            <div class="status-tab" data-filter="progress">In Bearbeitung</div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Sammlung suchen..." id="searchInput">
         </div>
 
         <!-- Loading State -->
@@ -37,80 +36,49 @@
             <div class="loading-spinner"></div>
         </div>
 
-        <!-- Empty State -->
-        <div class="empty-state" id="emptyState">
-            <i class="fas fa-book-open empty-icon"></i>
-            <h2 class="empty-title">No collections yet</h2>
-            <p class="empty-description">Create your first collection to get started!</p>
-            <button class="action-btn create-collection-btn" id="createCollectionBtnEmpty">
-                <i class="fas fa-plus"></i>
-                Create Collection
-            </button>
+        <!-- Collections Container -->
+        <div class="collections-container" id="collectionsContainer" style="display: none;">
+            <!-- Collections will be loaded here -->
         </div>
 
-        <!-- Collections Grid -->
-        <div class="collections-grid" id="collectionsGrid"></div>
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <i class="fas fa-book-open empty-icon"></i>
+            <h2 class="empty-title">Keine Sammlungen</h2>
+            <p class="empty-description">Erstelle deine erste Vokabelsammlung</p>
+            <button class="action-btn create-collection-btn" id="emptyStateCreateBtn">
+                <i class="fas fa-plus"></i>
+                Sammlung erstellen
+            </button>
+        </div>
     </div>
-
-    <!-- Modals -->
 
     <!-- Create Collection Modal -->
     <div class="modal-overlay" id="createCollectionModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Create New Collection</h3>
+                <h3 class="modal-title">Neue Sammlung erstellen</h3>
                 <i class="fas fa-times modal-close" data-close="createCollectionModal"></i>
             </div>
             <div class="modal-body">
                 <form id="createCollectionForm">
                     <div class="form-group">
-                        <label for="collectionName">Collection Name</label>
-                        <input type="text" class="form-control" id="collectionName" placeholder="e.g. Unit 1, Lesson 5" required>
+                        <label for="collectionName">Name</label>
+                        <input type="text" class="form-control" id="collectionName" placeholder="z.B. Englisch Grundwortschatz" required>
                     </div>
                     <div class="form-group">
-                        <label for="sourceLanguage">Source Language</label>
-                        <input type="text" class="form-control" id="sourceLanguage" placeholder="e.g. English" required>
+                        <label for="sourceLanguage">Quellsprache</label>
+                        <input type="text" class="form-control" id="sourceLanguage" placeholder="z.B. Deutsch" required>
                     </div>
                     <div class="form-group">
-                        <label for="targetLanguage">Target Language</label>
-                        <input type="text" class="form-control" id="targetLanguage" placeholder="e.g. Spanish" required>
+                        <label for="targetLanguage">Zielsprache</label>
+                        <input type="text" class="form-control" id="targetLanguage" placeholder="z.B. Englisch" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="createCollectionModal">Cancel</button>
-                <button class="btn btn-primary" id="saveCollectionBtn">Create</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Collection Modal -->
-    <div class="modal-overlay" id="editCollectionModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Collection</h3>
-                <i class="fas fa-times modal-close" data-close="editCollectionModal"></i>
-            </div>
-            <div class="modal-body">
-                <form id="editCollectionForm">
-                    <input type="hidden" id="editCollectionId">
-                    <div class="form-group">
-                        <label for="editCollectionName">Collection Name</label>
-                        <input type="text" class="form-control" id="editCollectionName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editSourceLanguage">Source Language</label>
-                        <input type="text" class="form-control" id="editSourceLanguage" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTargetLanguage">Target Language</label>
-                        <input type="text" class="form-control" id="editTargetLanguage" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="editCollectionModal">Cancel</button>
-                <button class="btn btn-primary" id="updateCollectionBtn">Update</button>
+                <button class="btn btn-secondary" data-close="createCollectionModal">Abbrechen</button>
+                <button class="btn btn-primary" id="saveCollectionBtn">Erstellen</button>
             </div>
         </div>
     </div>
@@ -119,17 +87,17 @@
     <div class="modal-overlay" id="deleteCollectionModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Delete Collection</h3>
+                <h3 class="modal-title">Sammlung löschen</h3>
                 <i class="fas fa-times modal-close" data-close="deleteCollectionModal"></i>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="deleteCollectionId">
-                <p>Are you sure you want to delete the collection <span id="deleteCollectionName"></span>?</p>
-                <p>This action cannot be undone and all word pairs in this collection will be lost.</p>
+                <p>Möchtest du diese Sammlung wirklich löschen?</p>
+                <p><strong>Name:</strong> <span id="deleteCollectionName"></span></p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="deleteCollectionModal">Cancel</button>
-                <button class="btn btn-danger" id="confirmDeleteCollectionBtn">Delete</button>
+                <button class="btn btn-secondary" data-close="deleteCollectionModal">Abbrechen</button>
+                <button class="btn btn-danger" id="confirmDeleteCollectionBtn">Löschen</button>
             </div>
         </div>
     </div>
@@ -140,2168 +108,297 @@
     <!-- Scripts -->
     <script src="assets/js/api.js"></script>
     <script>
-        // Function to load collections from the API
+        // DOM Elements
+        const loadingContainer = document.getElementById('loadingContainer');
+        const collectionsContainer = document.getElementById('collectionsContainer');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const statusTabs = document.querySelectorAll('.status-tab');
+        
+        // Collection data
+        let allCollections = [];
+        let filteredCollections = [];
+        let currentFilter = 'all';
+        
+        // Load collections when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCollections();
+            initializeEventListeners();
+        });
+        
+        // Function to load collections
         async function loadCollections() {
-            const loadingContainer = document.getElementById('loadingContainer');
-            const emptyState = document.getElementById('emptyState');
-            const collectionsGrid = document.getElementById('collectionsGrid');
-            
-            // Show loading
-            loadingContainer.style.display = 'flex';
-            emptyState.style.display = 'none';
-            collectionsGrid.style.display = 'none';
-            collectionsGrid.innerHTML = '';
+            showLoading();
             
             try {
-                // Fetch collections from the API
-                const collectionsData = await getCollections();
+                // Fetch collections from API
+                allCollections = await getCollections();
                 
-                // Hide loading
-                loadingContainer.style.display = 'none';
+                // Apply current filter and search
+                applyFilters();
                 
-                if (collectionsData.length === 0) {
-                    // Show empty state if no collections
-                    emptyState.style.display = 'block';
-                } else {
-                    // Populate the grid with collections
-                    collectionsGrid.style.display = 'grid';
-                    
-                    collectionsData.forEach(collection => {
-                        const card = createCollectionCard(collection);
-                        collectionsGrid.appendChild(card);
-                        
-                        // Add click event to the card
-                        card.addEventListener('click', function(e) {
-                            // Ignore clicks on edit/delete buttons
-                            if (e.target.classList.contains('edit-collection-btn') || 
-                                e.target.classList.contains('delete-collection-btn')) {
-                                return;
-                            }
-                            
-                            // Navigate to collection details page
-                            const collectionId = this.dataset.id;
-                            window.location.href = `collection.html?id=${collectionId}`;
-                        });
-                        
-                        // Add event listeners for edit and delete buttons
-                        const editBtn = card.querySelector('.edit-collection-btn');
-                        const deleteBtn = card.querySelector('.delete-collection-btn');
-                        
-                        editBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const collectionId = card.dataset.id;
-                            const title = card.querySelector('.collection-title').textContent;
-                            const fromLang = card.querySelector('.collection-languages').textContent.split('→')[0].trim();
-                            const toLang = card.querySelector('.collection-languages').textContent.split('→')[1].trim();
-                            
-                            // Set form values
-                            document.getElementById('editCollectionId').value = collectionId;
-                            document.getElementById('editCollectionName').value = title;
-                            document.getElementById('editSourceLanguage').value = fromLang;
-                            document.getElementById('editTargetLanguage').value = toLang;
-                            
-                            openModal('editCollectionModal');
-                        });
-                        
-                        deleteBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const collectionId = card.dataset.id;
-                            const title = card.querySelector('.collection-title').textContent;
-                            
-                            // Set modal content
-                            document.getElementById('deleteCollectionId').value = collectionId;
-                            document.getElementById('deleteCollectionName').textContent = title;
-                            
-                            openModal('deleteCollectionModal');
-                        });
-                    });
-                    
-                    // Apply current filter
-                    const activeFilter = document.querySelector('.filter-option.active');
-                    if (activeFilter) {
-                        sortCollections(activeFilter.dataset.sort);
-                    }
-                }
             } catch (error) {
                 console.error('Error loading collections:', error);
-                // Hide loading and show empty state on error
-                loadingContainer.style.display = 'none';
-                emptyState.style.display = 'block';
-                showToast('Error loading collections. Please try again.', 'error');
+                showToast('Fehler beim Laden der Sammlungen.', 'error');
+                
+                // Show empty state
+                hideLoading();
+                emptyState.style.display = 'flex';
             }
         }
         
-        // Function to sort collections
-        function sortCollections(sortBy) {
-            const collectionsGrid = document.getElementById('collectionsGrid');
-            const cards = Array.from(collectionsGrid.querySelectorAll('.collection-card'));
+        // Apply filters to collections
+        function applyFilters() {
+            // Get search query
+            const searchQuery = searchInput.value.toLowerCase().trim();
             
-            if (cards.length === 0) return;
-            
-            cards.sort((a, b) => {
-                if (sortBy === 'alphabetical') {
-                    // Sort by title
-                    const titleA = a.querySelector('.collection-title').textContent.toLowerCase();
-                    const titleB = b.querySelector('.collection-title').textContent.toLowerCase();
-                    return titleA.localeCompare(titleB);
-                } else if (sortBy === 'recent') {
-                    // Sort by date (most recent first)
-                    const dateA = new Date(a.querySelector('.collection-date').textContent);
-                    const dateB = new Date(b.querySelector('.collection-date').textContent);
-                    return dateB - dateA;
-                } else if (sortBy === 'progress') {
-                    // Sort by progress (highest first)
-                    const progressA = parseInt(a.querySelector('.collection-progress').textContent);
-                    const progressB = parseInt(b.querySelector('.collection-progress').textContent);
-                    return progressB - progressA;
+            // Filter collections
+            filteredCollections = allCollections.filter(collection => {
+                const [name, sourceLang, targetLang, totalLearned, progressPercent] = collection;
+                
+                // Apply search filter
+                const matchesSearch = name.toLowerCase().includes(searchQuery) || 
+                                    sourceLang.toLowerCase().includes(searchQuery) || 
+                                    targetLang.toLowerCase().includes(searchQuery);
+                
+                // Apply status filter
+                let matchesFilter = true;
+                if (currentFilter === 'recent') {
+                    // Show collections created in the last 7 days
+                    const creationDate = new Date(collection[7]); // collection[7] is the date
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    matchesFilter = creationDate >= sevenDaysAgo;
+                } else if (currentFilter === 'progress') {
+                    // Show collections with progress between 1% and 99%
+                    matchesFilter = progressPercent > 0 && progressPercent < 100;
                 }
-                return 0;
+                
+                return matchesSearch && matchesFilter;
             });
             
-            // Clear grid and re-append sorted cards
-            collectionsGrid.innerHTML = '';
-            cards.forEach(card => collectionsGrid.appendChild(card));
+            // Render filtered collections
+            renderCollections();
         }
         
-        // Initialize app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize modal close buttons
-            const modalCloseButtons = document.querySelectorAll('.modal-close, .btn[data-close]');
-            modalCloseButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const modalId = this.getAttribute('data-close');
-                    closeModal(modalId);
-                });
-            });
+        // Render collections
+        function renderCollections() {
+            // Clear container
+            collectionsContainer.innerHTML = '';
             
-            // Create Collection button event
-            document.getElementById('createCollectionBtn').addEventListener('click', function() {
-                document.getElementById('createCollectionForm').reset();
-                openModal('createCollectionModal');
-            });
-            
-            // Empty state Create Collection button
-            document.getElementById('createCollectionBtnEmpty').addEventListener('click', function() {
-                document.getElementById('createCollectionForm').reset();
-                openModal('createCollectionModal');
-            });
-            
-            // Save Collection button event
-            document.getElementById('saveCollectionBtn').addEventListener('click', async function() {
-                const name = document.getElementById('collectionName').value;
-                const sourceLang = document.getElementById('sourceLanguage').value;
-                const targetLang = document.getElementById('targetLanguage').value;
-                
-                if (!name || !sourceLang || !targetLang) {
-                    showToast('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                const collectionId = await createCollection(name, sourceLang, targetLang);
-                if (collectionId) {
-                    closeModal('createCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Update Collection button event
-            document.getElementById('updateCollectionBtn').addEventListener('click', async function() {
-                const collectionId = document.getElementById('editCollectionId').value;
-                const name = document.getElementById('editCollectionName').value;
-                const sourceLang = document.getElementById('editSourceLanguage').value;
-                const targetLang = document.getElementById('editTargetLanguage').value;
-                
-                if (!name || !sourceLang || !targetLang) {
-                    showToast('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                const success = await updateCollection(collectionId, {
-                    collection_name: name,
-                    source_language: sourceLang,
-                    target_language: targetLang
-                });
-                
-                if (success) {
-                    closeModal('editCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Delete Collection button event
-            document.getElementById('confirmDeleteCollectionBtn').addEventListener('click', async function() {
-                const collectionId = document.getElementById('deleteCollectionId').value;
-                
-                const success = await deleteCollection(collectionId);
-                if (success) {
-                    closeModal('deleteCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Filter options click event
-            const filterOptions = document.querySelectorAll('.filter-option');
-            filterOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove active class from all options
-                    filterOptions.forEach(opt => opt.classList.remove('active'));
-                    // Add active class to clicked option
-                    this.classList.add('active');
-                    
-                    // Sort collections
-                    sortCollections(this.dataset.sort);
-                });
-            });
-            
-            // Settings button event
-            document.getElementById('settingsBtn').addEventListener('click', function() {
-                showToast('Settings feature coming soon!', 'info');
-            });
-            
-            // Load collections
-            loadCollections();
-        });
-    </script>
-</body>
-</html>
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        /* Disable text selection for all buttons and clickable elements */
-        button, .filter-option, .action-icon, .settings-icon, h1, h2 {
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            user-select: none;
-        }
-
-        .app-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header section */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .app-title {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .settings-icon {
-            font-size: 24px;
-            color: var(--text-color);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .settings-icon:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Filters section */
-        .filters-section {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .filter-label {
-            font-size: 16px;
-            margin-right: 10px;
-            color: var(--text-color-light);
-        }
-
-        .filter-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .filter-option {
-            padding: 8px 15px;
-            background-color: var(--card-bg);
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-
-        .filter-option:hover, .filter-option.active {
-            background-color: var(--primary-color);
-        }
-
-        .filter-option.active {
-            font-weight: 600;
-        }
-
-        /* Collection cards section */
-        .collections-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .collection-card {
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .collection-card:hover {
-            transform: translateY(-5px);
-            background-color: var(--card-hover);
-        }
-
-        .collection-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .collection-details {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .collection-languages span {
-            margin-right: 8px;
-        }
-
-        .collection-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .stat-learned {
-            color: var(--success-color);
-        }
-
-        .stat-total {
-            color: var(--accent-color);
-        }
-
-        .collection-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .collection-date {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .collection-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-icon {
-            font-size: 16px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
-
-        .action-icon:hover {
-            color: var(--primary-color);
-        }
-
-        /* Start learning button */
-        .start-learning-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-            margin-bottom: 40px;
-        }
-
-        .start-learning-btn {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 8px 20px rgba(114, 9, 183, 0.2);
-        }
-
-        .start-learning-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(114, 9, 183, 0.3);
-        }
-
-        /* For small screens */
-        @media (max-width: 768px) {
-            .collections-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .app-title {
-                font-size: 28px;
-            }
-
-            .start-learning-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        /* Loading animation */
-        .loading-container {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-        }
-
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Empty state */
-        .empty-state {
-            display: none;
-            text-align: center;
-            padding: 50px 0;
-        }
-
-        .empty-state-icon {
-            font-size: 60px;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-
-        .empty-state-text {
-            font-size: 18px;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-        }
-        
-        /* Modal styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--modal-overlay);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        
-        .modal {
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 500px;
-            padding: 25px;
-            box-shadow: var(--box-shadow);
-            animation: modalFadeIn 0.3s ease;
-        }
-        
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-        
-        .modal-close {
-            font-size: 22px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .modal-close:hover {
-            color: var(--text-color);
-        }
-        
-        .modal-body {
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: var(--text-color);
-            font-weight: 500;
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--border-color);
-            background-color: var(--input-bg-color);
-            color: var(--text-color);
-            border-radius: var(--border-radius);
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px var(--primary-color);
-        }
-        
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--accent-color);
-        }
-        
-        .btn-secondary {
-            background-color: var(--card-hover);
-            color: var(--text-color);
-        }
-        
-        .btn-secondary:hover {
-            background-color: var(--background-color);
-        }
-        
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            opacity: 0.9;
-        }
-        
-        /* Pairs table */
-        .pairs-container {
-            margin-top: 20px;
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            overflow: hidden;
-        }
-        
-        .pairs-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .pairs-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .pairs-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .pairs-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .pairs-table th,
-        .pairs-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .pairs-table th {
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .pairs-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .pairs-table tr:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        
-        /* Learning mode */
-        .learning-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 900;
-            background-color: var(--background-color);
-            flex-direction: column;
-        }
-        
-        .learning-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .learning-title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-        
-        .learning-close {
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-color);
-            transition: var(--transition);
-        }
-        
-        .learning-close:hover {
-            color: var(--primary-color);
-        }
-        
-        .learning-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .learning-word {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--text-color);
-            text-align: center;
-        }
-        
-        .learning-language {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            text-align: center;
-        }
-        
-        .learning-actions {
-            display: flex;
-            gap: 20px;
-            margin-top: 40px;
-        }
-        
-        .learning-btn {
-            padding: 15px 40px;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .btn-yes {
-            background-color: var(--success-color);
-            color: #111;
-        }
-        
-        .btn-no {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .learning-btn:hover {
-            transform: translateY(-3px);
-        }
-        
-        .learning-toggle {
-            margin-top: 30px;
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-        
-        .learning-toggle i {
-            color: var(--primary-color);
-        }
-        
-        .learning-toggle:hover {
-            background-color: var(--card-hover);
-        }
-        
-        .learning-progress {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background-color: var(--card-bg);
-        }
-        
-        .learning-progress-bar {
-            height: 100%;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        /* Toast notification */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1500;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toast {
-            padding: 15px 20px;
-            border-radius: var(--border-radius);
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: var(--box-shadow);
-            animation: toastFadeIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
-            max-width: 350px;
-        }
-        
-        @keyframes toastFadeIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes toastFadeOut {
-            from { opacity: 1; transform: translateX(0); }
-            to { opacity: 0; transform: translateX(20px); }
-        }
-        
-        .toast-success {
-            background-color: var(--success-color);
-        }
-        
-        .toast-error {
-            background-color: var(--danger-color);
-        }
-        
-        .toast-info {
-            background-color: var(--primary-color);
-        }
-
-        /* Learning Mode Styles */
-        .learning-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            z-index: 2000;
-            flex-direction: column;
-        }
-        
-        .learning-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .learning-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-        
-        .learning-close {
-            color: var(--text-color-light);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .learning-close:hover {
-            color: var(--text-color);
-        }
-        
-        .learning-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .learning-language {
-            font-size: 1rem;
-            color: var(--text-color-light);
-            margin-bottom: 10px;
-        }
-        
-        .learning-word {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .learning-toggle {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 10px 15px;
-            background-color: var(--bg-color-light);
-            border-radius: 20px;
-            color: var(--text-color);
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin-bottom: 40px;
-            transition: background-color 0.2s;
-        }
-        
-        .learning-toggle:hover {
-            background-color: var(--card-hover);
-        }
-        
-        .learning-actions {
-            display: flex;
-            gap: 20px;
-        }
-        
-        .learning-btn {
-            padding: 15px 40px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .learning-btn:active {
-            transform: scale(0.98);
-        }
-        
-        .btn-yes {
-            background-color: var(--success-color);
-            color: white;
-        }
-        
-        .btn-yes:hover {
-            background-color: var(--success-color-dark);
-        }
-        
-        .btn-no {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .btn-no:hover {
-            background-color: var(--danger-color-dark);
-        }
-        
-        .learning-progress {
-            width: 100%;
-            height: 5px;
-            background-color: var(--border-color);
-            position: relative;
-        }
-        
-        .learning-progress-bar {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 0;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-        
-        /* Toast notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toast {
-            padding: 12px 20px;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
-            min-width: 280px;
-        }
-        
-        .toast i {
-            font-size: 1.1rem;
-        }
-        
-        .toast-info {
-            background-color: var(--info-color);
-            color: white;
-        }
-        
-        .toast-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        
-        .toast-error {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <!-- Header Section -->
-        <div class="app-header">
-            <h1 class="app-title">vocabulary</h1>
-            <i class="fas fa-cog settings-icon" id="settingsBtn"></i>
-        </div>
-
-        <!-- Filters Section -->
-        <div class="filters-section">
-            <span class="filter-label">Filter:</span>
-            <div class="filter-options">
-                <div class="filter-option active">All</div>
-                <div class="filter-option">Alphabetical</div>
-                <div class="filter-option">Recently Created</div>
-                <div class="filter-option">Most Words</div>
-                <div class="filter-option">Progress</div>
-            </div>
-        </div>
-
-        <!-- Loading Animation -->
-        <div class="loading-container" id="loadingContainer">
-            <div class="loading-spinner"></div>
-        </div>
-
-        <!-- Empty State -->
-        <div class="empty-state" id="emptyState">
-            <div class="empty-state-icon">
-                <i class="fas fa-book-open"></i>
-            </div>
-            <div class="empty-state-text">No vocabulary collections found</div>
-            <button class="start-learning-btn">
-                <i class="fas fa-plus"></i>
-                Create Collection
-            </button>
-        </div>
-
-        <!-- Collections Grid -->
-        <div class="collections-grid" id="collectionsGrid">
-            <!-- Collection cards will be populated here -->
-        </div>
-
-        <!-- Start Learning Button -->
-        <div class="start-learning-container">
-            <button class="start-learning-btn" id="startLearningBtn">
-                <i class="fas fa-graduation-cap"></i>
-                Start Learning
-            </button>
-        </div>
-    </div>
-    
-    <!-- Modals -->
-    
-    <!-- Create Collection Modal -->
-    <div class="modal-overlay" id="createCollectionModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Create New Collection</h3>
-                <i class="fas fa-times modal-close" data-close="createCollectionModal"></i>
-            </div>
-            <div class="modal-body">
-                <form id="createCollectionForm">
-                    <div class="form-group">
-                        <label for="collectionName">Collection Name</label>
-                        <input type="text" class="form-control" id="collectionName" placeholder="e.g. Unit 1, Lesson 5" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="sourceLanguage">Source Language</label>
-                        <input type="text" class="form-control" id="sourceLanguage" placeholder="e.g. English" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="targetLanguage">Target Language</label>
-                        <input type="text" class="form-control" id="targetLanguage" placeholder="e.g. Spanish" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="createCollectionModal">Cancel</button>
-                <button class="btn btn-primary" id="saveCollectionBtn">Create</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Edit Collection Modal -->
-    <div class="modal-overlay" id="editCollectionModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Collection</h3>
-                <i class="fas fa-times modal-close" data-close="editCollectionModal"></i>
-            </div>
-            <div class="modal-body">
-                <form id="editCollectionForm">
-                    <input type="hidden" id="editCollectionId">
-                    <div class="form-group">
-                        <label for="editCollectionName">Collection Name</label>
-                        <input type="text" class="form-control" id="editCollectionName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editSourceLanguage">Source Language</label>
-                   <input type="text" class="form-control" id="editSourceLanguage" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTargetLanguage">Target Language</label>
-                        <input type="text" class="form-control" id="editTargetLanguage" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="editCollectionModal">Cancel</button>
-                <button class="btn btn-primary" id="updateCollectionBtn">Update</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Delete Collection Modal -->
-    <div class="modal-overlay" id="deleteCollectionModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Delete Collection</h3>
-                <i class="fas fa-times modal-close" data-close="deleteCollectionModal"></i>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="deleteCollectionId">
-                <p>Are you sure you want to delete the collection <span id="deleteCollectionName"></span>?</p>
-                <p>This action cannot be undone and all word pairs in this collection will be lost.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="deleteCollectionModal">Cancel</button>
-                <button class="btn btn-danger" id="confirmDeleteCollectionBtn">Delete</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- View Collection Modal -->
-    <div class="modal-overlay" id="viewCollectionModal">
-        <div class="modal" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3 class="modal-title" id="viewCollectionTitle">Collection Details</h3>
-                <i class="fas fa-times modal-close" data-close="viewCollectionModal"></i>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="viewCollectionId">
-                <div class="collection-details" id="viewCollectionDetails">
-                    <p><strong>Source Language:</strong> <span id="viewSourceLanguage"></span></p>
-                    <p><strong>Target Language:</strong> <span id="viewTargetLanguage"></span></p>
-                </div>
-                
-                <!-- Pairs Table -->
-                <div class="pairs-container">
-                    <div class="pairs-header">
-                        <div class="pairs-title">Word Pairs</div>
-                        <div class="pairs-actions">
-                            <button class="btn btn-primary" id="addPairBtn"><i class="fas fa-plus"></i> Add Pair</button>
-                        </div>
-                    </div>
-                    <table class="pairs-table" id="pairsTable">
-                        <thead>
-                            <tr>
-                                <th>Source Word</th>
-                                <th>Target Word</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pairsTableBody">
-                            <!-- Pairs will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="viewCollectionModal">Close</button>
-                <button class="btn btn-primary" id="learnCollectionBtn"><i class="fas fa-graduation-cap"></i> Start Learning</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Add Pair Modal -->
-    <div class="modal-overlay" id="addPairModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Add Word Pair</h3>
-                <i class="fas fa-times modal-close" data-close="addPairModal"></i>
-            </div>
-            <div class="modal-body">
-                <form id="addPairForm">
-                    <input type="hidden" id="pairCollectionId">
-                    <div class="form-group">
-                        <label for="sourceWord">Source Word</label>
-                        <input type="text" class="form-control" id="sourceWord" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="targetWord">Target Word</label>
-                        <input type="text" class="form-control" id="targetWord" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="addPairModal">Cancel</button>
-                <button class="btn btn-primary" id="savePairBtn">Add</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Edit Pair Modal -->
-    <div class="modal-overlay" id="editPairModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Word Pair</h3>
-                <i class="fas fa-times modal-close" data-close="editPairModal"></i>
-            </div>
-            <div class="modal-body">
-                <form id="editPairForm">
-                    <input type="hidden" id="editPairCollectionId">
-                    <input type="hidden" id="editPairId">
-                    <div class="form-group">
-                        <label for="editSourceWord">Source Word</label>
-                        <input type="text" class="form-control" id="editSourceWord" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTargetWord">Target Word</label>
-                        <input type="text" class="form-control" id="editTargetWord" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="editPairModal">Cancel</button>
-                <button class="btn btn-primary" id="updatePairBtn">Update</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Delete Pair Modal -->
-    <div class="modal-overlay" id="deletePairModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Delete Word Pair</h3>
-                <i class="fas fa-times modal-close" data-close="deletePairModal"></i>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="deletePairCollectionId">
-                <input type="hidden" id="deletePairId">
-                <p>Are you sure you want to delete this word pair?</p>
-                <p><strong>Source Word:</strong> <span id="deletePairSourceWord"></span></p>
-                <p><strong>Target Word:</strong> <span id="deletePairTargetWord"></span></p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-close="deletePairModal">Cancel</button>
-                <button class="btn btn-danger" id="confirmDeletePairBtn">Delete</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Learning Mode -->
-    <div class="learning-container" id="learningContainer">
-        <div class="learning-header">
-            <div class="learning-title" id="learningTitle">Learning: Collection Name</div>
-            <i class="fas fa-times learning-close" id="closeLearningBtn"></i>
-        </div>
-        <div class="learning-content">
-            <div class="learning-language" id="learningLanguage">Language</div>
-            <div class="learning-word" id="learningWord">Word</div>
-            <div class="learning-toggle" id="learningToggleBtn">
-                <i class="fas fa-exchange-alt"></i>
-                <span>Show Translation</span>
-            </div>
-            <div class="learning-actions">
-                <button class="learning-btn btn-no" id="learningNoBtn">
-                    <i class="fas fa-times"></i>
-                    No
-                </button>
-                <button class="learning-btn btn-yes" id="learningYesBtn">
-                    <i class="fas fa-check"></i>
-                    Yes
-                </button>
-            </div>
-        </div>
-        <div class="learning-progress">
-            <div class="learning-progress-bar" id="learningProgressBar"></div>
-        </div>
-    </div>
-    
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer">
-        <!-- Toasts will be added here -->
-    </div>
-
-    <script>
-        // Base API URL
-        const API_BASE_URL = 'https://vocabulary-g8t6.onrender.com';
-        
-        // Toast notification functions
-        function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            
-            let icon = '';
-            if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
-            else if (type === 'error') icon = '<i class="fas fa-exclamation-circle"></i>';
-            else icon = '<i class="fas fa-info-circle"></i>';
-            
-            toast.innerHTML = `${icon} ${message}`;
-            toastContainer.appendChild(toast);
-            
-            // Remove toast after 3 seconds
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-        
-        // Modal functions
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
-        }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        // API client functions
-        async function fetchCollections() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/collections`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch collections');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching collections:', error);
-                showToast('Failed to load collections. Please try again.', 'error');
-                return [];
-            }
-        }
-        
-        async function fetchCollection(collectionId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/collection?collection_id=${collectionId}`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch collection');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching collection:', error);
-                showToast('Failed to load collection details. Please try again.', 'error');
-                return null;
-            }
-        }
-        
-        async function fetchPairs(collectionId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/collection/${collectionId}/pairs`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch pairs');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching pairs:', error);
-                showToast('Failed to load word pairs. Please try again.', 'error');
-                return [];
-            }
-        }
-        
-        async function createCollection(name, sourceLanguage, targetLanguage) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/collection`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        collection_name: name,
-                        source_language: sourceLanguage,
-                        target_language: targetLanguage
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to create collection');
-                }
-                
-                const result = await response.json();
-                showToast('Collection created successfully!', 'success');
-                return result.collection_id;
-            } catch (error) {
-                console.error('Error creating collection:', error);
-                showToast('Failed to create collection. Please try again.', 'error');
-                return null;
-            }
-        }
-        
-        async function updateCollection(collectionId, fields) {
-            try {
-                const columns = Object.keys(fields);
-                const values = Object.values(fields);
-                
-                const response = await fetch(`${API_BASE_URL}/collection/change`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        collection_id: collectionId,
-                        columns: columns,
-                        values: values
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to update collection');
-                }
-                
-                showToast('Collection updated successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error updating collection:', error);
-                showToast('Failed to update collection. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        async function deleteCollection(collectionId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/collection/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        collection_id: collectionId
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to delete collection');
-                }
-                
-                showToast('Collection deleted successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error deleting collection:', error);
-                showToast('Failed to delete collection. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        async function addPair(collectionId, sourceWord, targetWord) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/pair`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        collection_id: collectionId,
-                        source_word: sourceWord,
-                        target_word: targetWord
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to add word pair');
-                }
-                
-                showToast('Word pair added successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error adding word pair:', error);
-                showToast('Failed to add word pair. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        async function updatePair(pairId, sourceWord, targetWord) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/pair/change`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pair_id: pairId,
-                        columns: ['source_word', 'target_word'],
-                        values: [sourceWord, targetWord]
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to update word pair');
-                }
-                
-                showToast('Word pair updated successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error updating word pair:', error);
-                showToast('Failed to update word pair. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        async function deletePair(pairId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/pair/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pair_id: pairId
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to delete word pair');
-                }
-                
-                showToast('Word pair deleted successfully!', 'success');
-                return true;
-            } catch (error) {
-                console.error('Error deleting word pair:', error);
-                showToast('Failed to delete word pair. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        async function markPairLearned(pairId, learned) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/pair/change`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pair_id: pairId,
-                        columns: ['learned'],
-                        values: [learned ? 1 : 0]
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to update learning status');
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Error updating learning status:', error);
-                showToast('Failed to update learning status. Please try again.', 'error');
-                return false;
-            }
-        }
-        
-        // Function to create a collection card
-        function createCollectionCard(collection) {
-            const [title, fromLang, toLang, learned, total, date, collectionId] = collection;
-            const card = document.createElement('div');
-            card.className = 'collection-card';
-            card.dataset.id = collectionId;
-            
-            // Format the date
-            const formattedDate = new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            // Calculate progress percentage
-            const progress = total > 0 ? Math.round((learned / total) * 100) : 0;
-            
-            card.innerHTML = `
-                <h3 class="collection-title">${title}</h3>
-                <div class="collection-details">
-                    <div class="collection-languages">
-                        <span>${fromLang}</span> → <span>${toLang}</span>
-                    </div>
-                    <div class="collection-progress">${progress}% complete</div>
-                </div>
-                <div class="collection-stats">
-                    <div class="stat stat-learned">
-                        <i class="fas fa-check-circle"></i>
-                        <span>${learned} learned</span>
-                    </div>
-                    <div class="stat stat-total">
-                        <i class="fas fa-book"></i>
-                        <span>${total} total</span>
-                    </div>
-                </div>
-                <div class="collection-footer">
-                    <div class="collection-date">${formattedDate}</div>
-                    <div class="collection-actions">
-                        <i class="fas fa-edit action-icon edit-collection-btn"></i>
-                        <i class="fas fa-trash action-icon delete-collection-btn"></i>
-                    </div>
-                </div>
-            `;
-            
-            // Make the whole card clickable to view collection details
-            card.addEventListener('click', function(e) {
-                // Ignore if edit or delete button was clicked
-                if (e.target.classList.contains('edit-collection-btn') || 
-                    e.target.classList.contains('delete-collection-btn')) {
-                    return;
-                }
-                
-                viewCollection(collectionId, title, fromLang, toLang);
-            });
-            
-            // Event listeners for edit and delete buttons
-            const editBtn = card.querySelector('.edit-collection-btn');
-            const deleteBtn = card.querySelector('.delete-collection-btn');
-            
-            editBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                openEditCollectionModal(collectionId, title, fromLang, toLang);
-            });
-            
-            deleteBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                openDeleteCollectionModal(collectionId, title);
-            });
-            
-            return card;
-        }
-        
-        // Modal Management Functions
-        function viewCollection(collectionId, title, sourceLang, targetLang) {
-            // Set modal content
-            document.getElementById('viewCollectionId').value = collectionId;
-            document.getElementById('viewCollectionTitle').textContent = title;
-            document.getElementById('viewSourceLanguage').textContent = sourceLang;
-            document.getElementById('viewTargetLanguage').textContent = targetLang;
-            
-            // Clear pairs table
-            const pairsTableBody = document.getElementById('pairsTableBody');
-            pairsTableBody.innerHTML = '';
-            
-            // Add loading row
-            const loadingRow = document.createElement('tr');
-            loadingRow.innerHTML = '<td colspan="4" class="text-center">Loading word pairs...</td>';
-            pairsTableBody.appendChild(loadingRow);
-            
-            // Open modal
-            openModal('viewCollectionModal');
-            
-            // Fetch pairs for the collection
-            fetchPairs(collectionId).then(pairs => {
-                // Clear loading row
-                pairsTableBody.innerHTML = '';
-                
-                if (pairs.length === 0) {
-                    // No pairs found
-                    const emptyRow = document.createElement('tr');
-                    emptyRow.innerHTML = '<td colspan="4" class="text-center">No word pairs found. Add some pairs to start learning!</td>';
-                    pairsTableBody.appendChild(emptyRow);
-                } else {
-                    // Add pairs to table
-                    pairs.forEach(pair => {
-                        const [pairId, sourceWord, targetWord, learned] = pair;
-                        const pairRow = document.createElement('tr');
-                        pairRow.dataset.id = pairId;
-                        
-                        pairRow.innerHTML = `
-                            <td>${sourceWord}</td>
-                            <td>${targetWord}</td>
-                            <td>
-                                <span class="pair-status ${learned ? 'learned' : 'not-learned'}">
-                                    ${learned ? 'Learned' : 'Not Learned'}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="pair-actions">
-                                    <i class="fas fa-edit action-icon edit-pair-btn"></i>
-                                    <i class="fas fa-trash action-icon delete-pair-btn"></i>
-                                </div>
-                            </td>
-                        `;
-                        
-                        pairsTableBody.appendChild(pairRow);
-                        
-                        // Add event listeners
-                        const editBtn = pairRow.querySelector('.edit-pair-btn');
-                        const deleteBtn = pairRow.querySelector('.delete-pair-btn');
-                        
-                        editBtn.addEventListener('click', function() {
-                            openEditPairModal(pairId, collectionId, sourceWord, targetWord);
-                        });
-                        
-                        deleteBtn.addEventListener('click', function() {
-                            openDeletePairModal(pairId, collectionId, sourceWord, targetWord);
-                        });
-                    });
-                }
-            });
-        }
-        
-        function openCreateCollectionModal() {
-            // Reset form
-            document.getElementById('createCollectionForm').reset();
-            openModal('createCollectionModal');
-        }
-        
-        function openEditCollectionModal(collectionId, name, sourceLang, targetLang) {
-            // Set form values
-            document.getElementById('editCollectionId').value = collectionId;
-            document.getElementById('editCollectionName').value = name;
-            document.getElementById('editSourceLanguage').value = sourceLang;
-            document.getElementById('editTargetLanguage').value = targetLang;
-            
-            openModal('editCollectionModal');
-        }
-        
-        function openDeleteCollectionModal(collectionId, name) {
-            // Set modal content
-            document.getElementById('deleteCollectionId').value = collectionId;
-            document.getElementById('deleteCollectionName').textContent = name;
-            
-            openModal('deleteCollectionModal');
-        }
-        
-        function openAddPairModal(collectionId) {
-            // Reset form and set collection ID
-            document.getElementById('addPairForm').reset();
-            document.getElementById('pairCollectionId').value = collectionId;
-            
-            openModal('addPairModal');
-        }
-        
-        function openEditPairModal(pairId, collectionId, sourceWord, targetWord) {
-            // Set form values
-            document.getElementById('editPairId').value = pairId;
-            document.getElementById('editPairCollectionId').value = collectionId;
-            document.getElementById('editSourceWord').value = sourceWord;
-            document.getElementById('editTargetWord').value = targetWord;
-            
-            openModal('editPairModal');
-        }
-        
-        function openDeletePairModal(pairId, collectionId, sourceWord, targetWord) {
-            // Set modal content
-            document.getElementById('deletePairId').value = pairId;
-            document.getElementById('deletePairCollectionId').value = collectionId;
-            document.getElementById('deletePairSourceWord').textContent = sourceWord;
-            document.getElementById('deletePairTargetWord').textContent = targetWord;
-            
-            openModal('deletePairModal');
-        }
-        
-        // Learning Mode Functions
-        let currentLearningPairs = [];
-        let currentLearningIndex = 0;
-        let isShowingTranslation = false;
-        let currentCollectionId = null;
-        
-        function startLearningMode(collectionId, collectionName) {
-            // Set modal title
-            document.getElementById('learningTitle').textContent = `Learning: ${collectionName}`;
-            
-            // Show learning container
-            document.getElementById('learningContainer').style.display = 'flex';
-            
-            // Fetch pairs for the collection
-            fetchPairs(collectionId).then(pairs => {
-                // Filter out learned pairs
-                const unlearned = pairs.filter(pair => !pair[3]);
-                
-                if (unlearned.length === 0) {
-                    // All pairs learned
-                    document.getElementById('learningWord').textContent = 'Congratulations!';
-                    document.getElementById('learningLanguage').textContent = 'All words learned';
-                    document.getElementById('learningToggleBtn').style.display = 'none';
-                    document.getElementById('learningNoBtn').style.display = 'none';
-                    document.getElementById('learningYesBtn').style.display = 'none';
-                    document.getElementById('learningProgressBar').style.width = '100%';
-                    return;
-                }
-                
-                // Shuffle pairs
-                currentLearningPairs = unlearned.sort(() => Math.random() - 0.5);
-                currentLearningIndex = 0;
-                currentCollectionId = collectionId;
-                
-                // Start learning
-                showCurrentLearningPair();
-            });
-        }
-        
-        function showCurrentLearningPair() {
-            if (currentLearningIndex >= currentLearningPairs.length) {
-                // Learning complete
-                document.getElementById('learningWord').textContent = 'Learning Complete!';
-                document.getElementById('learningLanguage').textContent = 'Great job!';
-                document.getElementById('learningToggleBtn').style.display = 'none';
-                document.getElementById('learningNoBtn').style.display = 'none';
-                document.getElementById('learningYesBtn').style.display = 'none';
-                document.getElementById('learningProgressBar').style.width = '100%';
+            // Check if there are any collections
+            if (filteredCollections.length === 0) {
+                hideLoading();
+                collectionsContainer.style.display = 'none';
+                emptyState.style.display = 'flex';
                 return;
             }
             
-            const pair = currentLearningPairs[currentLearningIndex];
-            const [pairId, sourceWord, targetWord] = pair;
+            // Display collections
+            filteredCollections.forEach(collection => {
+                const collectionCard = document.createElement('div');
+                collectionCard.className = 'collection-card';
+                collectionCard.dataset.id = collection[7]; // collection[7] is the ID
+                
+                // Format: [name, sourceLang, targetLang, totalLearned, progressPercent, learnedRatio, totalWords, collectionId, date]
+                const [name, sourceLang, targetLang, totalLearned, progressPercent, learnedRatio, totalWords] = collection;
+                
+                // Format progress text
+                const progressText = totalWords > 0 ? 
+                    `${totalLearned}/${totalWords} Wörter gelernt (${progressPercent}%)` : 
+                    'Keine Wörter hinzugefügt';
+                
+                // Set card HTML
+                collectionCard.innerHTML = `
+                    <div class="collection-info">
+                        <h3 class="collection-title">${name}</h3>
+                        <div class="collection-languages">${sourceLang} → ${targetLang}</div>
+                        <div class="collection-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="progress-text">${progressText}</div>
+                        </div>
+                    </div>
+                    <div class="collection-actions">
+                        <button class="action-btn learn-btn" data-id="${collection[7]}" title="Lernen starten">
+                            <i class="fas fa-graduation-cap"></i>
+                        </button>
+                        <button class="action-btn delete-btn" data-id="${collection[7]}" data-name="${name}" title="Sammlung löschen">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // Add to container
+                collectionsContainer.appendChild(collectionCard);
+            });
             
-            // Reset to showing source word
-            isShowingTranslation = false;
-            document.getElementById('learningLanguage').textContent = 'Source';
-            document.getElementById('learningWord').textContent = sourceWord;
-            document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Translation';
+            // Show collections
+            hideLoading();
+            collectionsContainer.style.display = 'grid';
+            emptyState.style.display = 'none';
             
-            // Update progress bar
-            const progress = (currentLearningIndex / currentLearningPairs.length) * 100;
-            document.getElementById('learningProgressBar').style.width = `${progress}%`;
+            // Add event listeners to collection cards
+            addCollectionCardEventListeners();
         }
         
-        function toggleTranslation() {
-            if (currentLearningIndex >= currentLearningPairs.length) return;
+        // Add event listeners to collection cards
+        function addCollectionCardEventListeners() {
+            // Collection card click
+            document.querySelectorAll('.collection-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Prevent event bubbling from action buttons
+                    if (e.target.closest('.collection-actions')) {
+                        return;
+                    }
+                    
+                    // Navigate to collection details
+                    const collectionId = this.dataset.id;
+                    window.location.href = `collection.html?id=${collectionId}`;
+                });
+            });
             
-            const pair = currentLearningPairs[currentLearningIndex];
-            const [pairId, sourceWord, targetWord] = pair;
+            // Learn button click
+            document.querySelectorAll('.learn-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const collectionId = this.dataset.id;
+                    window.location.href = `learn.html?id=${collectionId}`;
+                });
+            });
             
-            if (isShowingTranslation) {
-                // Show source word
-                document.getElementById('learningLanguage').textContent = 'Source';
-                document.getElementById('learningWord').textContent = sourceWord;
-                document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Translation';
-            } else {
-                // Show target word
-                document.getElementById('learningLanguage').textContent = 'Target';
-                document.getElementById('learningWord').textContent = targetWord;
-                document.getElementById('learningToggleBtn').querySelector('span').textContent = 'Show Source';
+            // Delete button click
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const collectionId = this.dataset.id;
+                    const collectionName = this.dataset.name;
+                    openDeleteCollectionModal(collectionId, collectionName);
+                });
+            });
+        }
+        
+        // Open delete collection modal
+        function openDeleteCollectionModal(collectionId, collectionName) {
+            document.getElementById('deleteCollectionId').value = collectionId;
+            document.getElementById('deleteCollectionName').textContent = collectionName;
+            openModal('deleteCollectionModal');
+        }
+        
+        // Delete collection
+        async function deleteCollectionHandler() {
+            const collectionId = document.getElementById('deleteCollectionId').value;
+            
+            closeModal('deleteCollectionModal');
+            showLoading();
+            
+            try {
+                // Delete collection
+                const success = await deleteCollection(collectionId);
+                
+                if (success) {
+                    // Reload collections
+                    await loadCollections();
+                }
+            } catch (error) {
+                console.error('Error deleting collection:', error);
+                showToast('Fehler beim Löschen der Sammlung.', 'error');
+                hideLoading();
+            }
+        }
+        
+        // Save new collection
+        async function saveCollectionHandler() {
+            const nameInput = document.getElementById('collectionName');
+            const sourceLangInput = document.getElementById('sourceLanguage');
+            const targetLangInput = document.getElementById('targetLanguage');
+            
+            // Validate form
+            if (!nameInput.value || !sourceLangInput.value || !targetLangInput.value) {
+                showToast('Bitte fülle alle Felder aus.', 'error');
+                return;
             }
             
-            isShowingTranslation = !isShowingTranslation;
+            closeModal('createCollectionModal');
+            showLoading();
+            
+            try {
+                // Create collection
+                const collectionId = await createCollection(
+                    nameInput.value,
+                    sourceLangInput.value,
+                    targetLangInput.value
+                );
+                
+                if (collectionId) {
+                    // Reload collections
+                    await loadCollections();
+                    
+                    // Reset form
+                    document.getElementById('createCollectionForm').reset();
+                }
+            } catch (error) {
+                console.error('Error creating collection:', error);
+                showToast('Fehler beim Erstellen der Sammlung.', 'error');
+                hideLoading();
+            }
         }
         
-        // Initialize app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Initialize modals
-            const modalCloseButtons = document.querySelectorAll('.modal-close, .btn[data-close]');
-            modalCloseButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const modalId = this.getAttribute('data-close');
+        // Initialize event listeners
+        function initializeEventListeners() {
+            // Create collection button
+            document.getElementById('createCollectionBtn').addEventListener('click', function() {
+                openModal('createCollectionModal');
+            });
+            
+            // Empty state create button
+            document.getElementById('emptyStateCreateBtn').addEventListener('click', function() {
+                openModal('createCollectionModal');
+            });
+            
+            // Save collection button
+            document.getElementById('saveCollectionBtn').addEventListener('click', saveCollectionHandler);
+            
+            // Confirm delete collection button
+            document.getElementById('confirmDeleteCollectionBtn').addEventListener('click', deleteCollectionHandler);
+            
+            // Search input
+            searchInput.addEventListener('input', function() {
+                applyFilters();
+            });
+            
+            // Status tabs
+            statusTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Update active tab
+                    statusTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update filter
+                    currentFilter = this.dataset.filter;
+                    applyFilters();
+                });
+            });
+            
+            // Modal close buttons
+            document.querySelectorAll('.modal-close, .btn[data-close]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modalId = this.dataset.close;
                     closeModal(modalId);
                 });
             });
-            
-            // Create Collection button event
-            document.getElementById('createCollectionBtn').addEventListener('click', function() {
-                openCreateCollectionModal();
-            });
-            
-            // Save Collection button event
-            document.getElementById('saveCollectionBtn').addEventListener('click', async function() {
-                const name = document.getElementById('collectionName').value;
-                const sourceLang = document.getElementById('sourceLanguage').value;
-                const targetLang = document.getElementById('targetLanguage').value;
-                
-                if (!name || !sourceLang || !targetLang) {
-                    showToast('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                const collectionId = await createCollection(name, sourceLang, targetLang);
-                if (collectionId) {
-                    closeModal('createCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Update Collection button event
-            document.getElementById('updateCollectionBtn').addEventListener('click', async function() {
-                const collectionId = document.getElementById('editCollectionId').value;
-                const name = document.getElementById('editCollectionName').value;
-                const sourceLang = document.getElementById('editSourceLanguage').value;
-                const targetLang = document.getElementById('editTargetLanguage').value;
-                
-                if (!name || !sourceLang || !targetLang) {
-                    showToast('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                const success = await updateCollection(collectionId, {
-                    collection_name: name,
-                    source_language: sourceLang,
-                    target_language: targetLang
-                });
-                
-                if (success) {
-                    closeModal('editCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Delete Collection button event
-            document.getElementById('confirmDeleteCollectionBtn').addEventListener('click', async function() {
-                const collectionId = document.getElementById('deleteCollectionId').value;
-                
-                const success = await deleteCollection(collectionId);
-                if (success) {
-                    closeModal('deleteCollectionModal');
-                    loadCollections(); // Reload collections
-                }
-            });
-            
-            // Add Pair button event in collection view
-            document.getElementById('addPairBtn').addEventListener('click', function() {
-                const collectionId = document.getElementById('viewCollectionId').value;
-                openAddPairModal(collectionId);
-            });
-            
-            // Save Pair button event
-            document.getElementById('savePairBtn').addEventListener('click', async function() {
-                const collectionId = document.getElementById('pairCollectionId').value;
-                const sourceWord = document.getElementById('sourceWord').value;
-                const targetWord = document.getElementById('targetWord').value;
-                
-                if (!sourceWord || !targetWord) {
-                    showToast('Please fill in both words', 'error');
-                    return;
-                }
-                
-                const success = await addPair(collectionId, sourceWord, targetWord);
-                if (success) {
-                    closeModal('addPairModal');
-                    // Refresh collection view
-                    const title = document.getElementById('viewCollectionTitle').textContent;
-                    const sourceLang = document.getElementById('viewSourceLanguage').textContent;
-                    const targetLang = document.getElementById('viewTargetLanguage').textContent;
-                    viewCollection(collectionId, title, sourceLang, targetLang);
-                }
-            });
-            
-            // Update Pair button event
-            document.getElementById('updatePairBtn').addEventListener('click', async function() {
-                const pairId = document.getElementById('editPairId').value;
-                const collectionId = document.getElementById('editPairCollectionId').value;
-                const sourceWord = document.getElementById('editSourceWord').value;
-                const targetWord = document.getElementById('editTargetWord').value;
-                
-                if (!sourceWord || !targetWord) {
-                    showToast('Please fill in both words', 'error');
-                    return;
-                }
-                
-                const success = await updatePair(pairId, sourceWord, targetWord);
-                if (success) {
-                    closeModal('editPairModal');
-                    // Refresh collection view
-                    const title = document.getElementById('viewCollectionTitle').textContent;
-                    const sourceLang = document.getElementById('viewSourceLanguage').textContent;
-                    const targetLang = document.getElementById('viewTargetLanguage').textContent;
-                    viewCollection(collectionId, title, sourceLang, targetLang);
-                }
-            });
-            
-            // Delete Pair button event
-            document.getElementById('confirmDeletePairBtn').addEventListener('click', async function() {
-                const pairId = document.getElementById('deletePairId').value;
-                const collectionId = document.getElementById('deletePairCollectionId').value;
-                
-                const success = await deletePair(pairId);
-                if (success) {
-                    closeModal('deletePairModal');
-                    // Refresh collection view
-                    const title = document.getElementById('viewCollectionTitle').textContent;
-                    const sourceLang = document.getElementById('viewSourceLanguage').textContent;
-                    const targetLang = document.getElementById('viewTargetLanguage').textContent;
-                    viewCollection(collectionId, title, sourceLang, targetLang);
-                }
-            });
-            
-            // Learn Collection button event
-            document.getElementById('learnCollectionBtn').addEventListener('click', function() {
-                const collectionId = document.getElementById('viewCollectionId').value;
-                const collectionName = document.getElementById('viewCollectionTitle').textContent;
-                
-                closeModal('viewCollectionModal');
-                startLearningMode(collectionId, collectionName);
-            });
-            
-            // Start Learning button (from main screen)
-            document.getElementById('startLearningBtn').addEventListener('click', function() {
-                // Find the first collection or show a message if none
-                const collectionsGrid = document.getElementById('collectionsGrid');
-                const firstCard = collectionsGrid.querySelector('.collection-card');
-                
-                if (firstCard) {
-                    // Get the collection ID and name
-                    const collectionId = firstCard.dataset.id;
-                    const collectionName = firstCard.querySelector('.collection-title').textContent;
-                    
-                    // Start learning
-                    startLearningMode(collectionId, collectionName);
-                } else {
-                    showToast('No collections found. Create a collection first.', 'error');
-                }
-            });
-            
-            // Learning mode controls
-            document.getElementById('closeLearningBtn').addEventListener('click', function() {
-                document.getElementById('learningContainer').style.display = 'none';
-            });
-            
-            document.getElementById('learningToggleBtn').addEventListener('click', function() {
-                toggleTranslation();
-            });
-            
-            document.getElementById('learningYesBtn').addEventListener('click', async function() {
-                if (currentLearningIndex >= currentLearningPairs.length) return;
-                
-                // Mark pair as learned
-                const pair = currentLearningPairs[currentLearningIndex];
-                const pairId = pair[0];
-                
-                await markPairLearned(pairId, true);
-                
-                // Move to next pair
-                currentLearningIndex++;
-                showCurrentLearningPair();
-            });
-            
-            document.getElementById('learningNoBtn').addEventListener('click', function() {
-                // Just move to next pair without marking as learned
-                currentLearningIndex++;
-                showCurrentLearningPair();
-            });
-            
-            // Filter options click event
-            const filterOptions = document.querySelectorAll('.filter-option');
-            filterOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove active class from all options
-                    filterOptions.forEach(opt => opt.classList.remove('active'));
-                    // Add active class to clicked option
-                    this.classList.add('active');
-                    
-                    // Sort collections
-                    sortCollections(this.dataset.sort);
-                });
-            });
-            
-            // Settings button event
-            document.getElementById('settingsBtn').addEventListener('click', function() {
-                showToast('Settings feature coming soon!', 'info');
-            });
-            
-            // Load collections
-            loadCollections();
-        });
-        
-        // Function to load collections from the API
-        async function loadCollections() {
-            const loadingContainer = document.getElementById('loadingContainer');
-            const emptyState = document.getElementById('emptyState');
-            const collectionsGrid = document.getElementById('collectionsGrid');
-            
-            // Show loading
-            loadingContainer.style.display = 'flex';
-            emptyState.style.display = 'none';
-            collectionsGrid.style.display = 'none';
-            collectionsGrid.innerHTML = '';
-            
-            try {
-                // Fetch collections from the API
-                const collectionsData = await fetchCollections();
-                
-                // Hide loading
-                loadingContainer.style.display = 'none';
-                
-                if (collectionsData.length === 0) {
-                    // Show empty state if no collections
-                    emptyState.style.display = 'block';
-                } else {
-                    // Populate the grid with collections
-                    collectionsGrid.style.display = 'grid';
-                    
-                    collectionsData.forEach(collection => {
-                        const card = createCollectionCard(collection);
-                        collectionsGrid.appendChild(card);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading collections:', error);
-                // Hide loading and show empty state on error
-                loadingContainer.style.display = 'none';
-                emptyState.style.display = 'block';
-                showToast('Error loading collections. Please try again.', 'error');
-            }
         }
         
-        // Function to sort collections
-        function sortCollections(sortBy) {
-            const collectionsGrid = document.getElementById('collectionsGrid');
-            const cards = Array.from(collectionsGrid.querySelectorAll('.collection-card'));
-            
-            if (cards.length === 0) return;
-            
-            cards.sort((a, b) => {
-                if (sortBy === 'alphabetical') {
-                    // Sort by title
-                    const titleA = a.querySelector('.collection-title').textContent.toLowerCase();
-                    const titleB = b.querySelector('.collection-title').textContent.toLowerCase();
-                    return titleA.localeCompare(titleB);
-                } else if (sortBy === 'recent') {
-                    // Sort by date (most recent first)
-                    const dateA = new Date(a.querySelector('.collection-date').textContent);
-                    const dateB = new Date(b.querySelector('.collection-date').textContent);
-                    return dateB - dateA;
-                } else if (sortBy === 'progress') {
-                    // Sort by progress (highest first)
-                    const progressA = parseInt(a.querySelector('.collection-progress').textContent);
-                    const progressB = parseInt(b.querySelector('.collection-progress').textContent);
-                    return progressB - progressA;
-                }
-                return 0;
-            });
-            
-            // Clear grid and re-append sorted cards
-            collectionsGrid.innerHTML = '';
-            cards.forEach(card => collectionsGrid.appendChild(card));
+        // Helper functions
+        function showLoading() {
+            loadingContainer.style.display = 'flex';
+            collectionsContainer.style.display = 'none';
+            emptyState.style.display = 'none';
+        }
+        
+        function hideLoading() {
+            loadingContainer.style.display = 'none';
         }
     </script>
 </body>

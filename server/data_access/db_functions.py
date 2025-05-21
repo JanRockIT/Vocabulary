@@ -1,4 +1,4 @@
-from .db_components import execute_commit, execute_query
+from .db_components import execute_commit, execute_query, execute_query_one
 from .constants import (
     DATABASE_INTERVAL,
     INTERVAL_RESET,
@@ -7,52 +7,57 @@ from .constants import (
     STATUS_PAIR_DEFAULT,
     STATUS_DELETED
 )
+from typing import Optional, List, Dict, Any, Union
+from datetime import datetime
 
 # get
-def get_collections() -> list[tuple]:
-    sql: str = """
-    SELECT *
-    FROM vocabulary_collections;
-    """
-
-    rows: list[tuple] = execute_query(
-        sql=sql
-    )
-
-    return rows
-
-def get_collection(
-        collection_id: int
-) -> tuple:
+def get_collections() -> List[Dict[str, Any]]:
+    """Holt alle Vokabelsammlungen aus der Datenbank"""
     sql: str = """
     SELECT *
     FROM vocabulary_collections
-    WHERE id = %s
-    LIMIT 1;
+    WHERE status != %s
+    ORDER BY created_at DESC;
     """
+    
+    try:
+        return execute_query(sql, (STATUS_DELETED,))
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Sammlungen: {e}")
+        return []
 
-    rows: list[tuple] = execute_query(
-        sql=sql,
-        params=(collection_id,)
-    )
-
-    return rows[0] if rows else None
-
-def get_pairs(
-        collection_id: int
-) -> tuple:
+def get_collection(collection_id: int) -> Optional[Dict[str, Any]]:
+    """Holt eine bestimmte Vokabelsammlung anhand der ID"""
     sql: str = """
     SELECT *
-    FROM vocabulary_pairs
-    WHERE collection_id = %s;
+    FROM vocabulary_collections
+    WHERE id = %s AND status != %s
+    LIMIT 1;
     """
+    
+    try:
+        return execute_query_one(sql, (collection_id, STATUS_DELETED))
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Sammlung {collection_id}: {e}")
+        return None
 
-    rows: list[tuple] = execute_query(
-        sql=sql,
-        params=(collection_id,)
-    )
-
-    return rows
+def get_pairs(collection_id: int) -> List[Dict[str, Any]]:
+    """Holt alle Vokabelpaare einer Sammlung"""
+    sql: str = """
+    SELECT vp.*
+    FROM vocabulary_pairs vp
+    JOIN vocabulary_collections vc ON vp.collection_id = vc.id
+    WHERE vp.collection_id = %s 
+    AND vp.status != %s
+    AND vc.status != %s
+    ORDER BY vp.next_review, vp.interval;
+    """
+    
+    try:
+        return execute_query(sql, (collection_id, STATUS_DELETED, STATUS_DELETED))
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Vokabeln für Sammlung {collection_id}: {e}")
+        return []
 
 def get_pair(
         collection_id: int,
@@ -88,7 +93,7 @@ def get_all_history() -> list[tuple]:
     return rows
 
 def get_collection_history(
-        collecion_id: int
+        collection_id: int
 ) -> list[tuple]:
     sql: str = """
     SELECT *
@@ -98,7 +103,7 @@ def get_collection_history(
 
     rows: list[tuple] = execute_query(
         sql=sql,
-        params=(collecion_id,)
+        params=(collection_id,)
     )
 
     return rows
@@ -108,58 +113,79 @@ def add_collection(
         collection_name: str,
         source_language: str,
         target_language: str
-) -> int:
+) -> Optional[int]:
+    """Fügt eine neue Vokabelsammlung hinzu"""
     sql: str = """
-    INSERT INTO vocabulary_collections
-    (name, source_language, target_language, status)
-    VALUES (%s, %s, %s, %s)
-    RETURNING id;
-    """
-
-    status: int = STATUS_COLLECTION_DEFAULT
-
-    params: tuple = (
-        collection_name,
+    INSERT INTO vocabulary_collections (
+        name,
         source_language,
         target_language,
-        status
+        status,
+        interval,
+        created_at,
+        updated_at
     )
-
-    rows: list[tuple] = execute_query(
-        sql=sql,
-        params=params
-    )
-
-    new_id: int = rows[0][0]
-
-    return new_id
+    VALUES (%(name)s, %(source_language)s, %(target_language)s, 
+            %(status)s, %(interval)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id;
+    """
+    
+    params = {
+        'name': collection_name,
+        'source_language': source_language,
+        'target_language': target_language,
+        'status': STATUS_COLLECTION_DEFAULT,
+        'interval': INTERVAL_START
+    }
+    
+    try:
+        result = execute_query_one(sql, params)
+        return result['id'] if result else None
+    except Exception as e:
+        print(f"Fehler beim Hinzufügen der Sammlung: {e}")
+        return None
 
 def add_pair(
         collection_id: int,
         source_word: str,
         target_word: str
-) -> None:
+) -> Optional[int]:
+    """Fügt ein neues Vokabelpaar zu einer Sammlung hinzu"""
     sql: str = """
-    INSERT INTO vocabulary_pairs
-    (collection_id, source_word, target_word, status, interval)
-    VALUES (%s, %s, %s, %s, %s);
-    """
-
-    status: int = STATUS_PAIR_DEFAULT
-    interval: int = INTERVAL_START
-
-    params: tuple = (
+    INSERT INTO vocabulary_pairs (
         collection_id,
         source_word,
         target_word,
         status,
-        interval
+        interval,
+        created_at,
+        updated_at
     )
-
-    execute_commit(
-        sql=sql,
-        params=params
-    )
+    VALUES (%(collection_id)s, %(source_word)s, %(target_word)s, 
+            %(status)s, %(interval)s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    RETURNING id;
+    """
+    
+    params = {
+        'collection_id': collection_id,
+        'source_word': source_word.strip(),
+        'target_word': target_word.strip(),
+        'status': STATUS_PAIR_DEFAULT,
+        'interval': INTERVAL_START
+    }
+    
+    try:
+        # Überprüfe, ob die Sammlung existiert
+        collection = get_collection(collection_id)
+        if not collection:
+            print(f"Sammlung {collection_id} existiert nicht")
+            return None
+            
+        result = execute_query_one(sql, params)
+        return result['id'] if result else None
+    except Exception as e:
+        print(f"Fehler beim Hinzufügen des Vokabelpaars: {e}")
+        return None
 
 def add_history(
       collection_id: int,

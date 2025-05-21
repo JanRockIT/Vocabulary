@@ -42,7 +42,7 @@ function closeModal(modalId) {
 // API Functions
 async function getCollections() {
     try {
-        // URL auf /collections ändern, um dem Backend-Endpunkt zu entsprechen
+        // Backend-Endpunkt /collections verwenden
         const response = await fetch(`${API_BASE_URL}/collections`);
         if (!response.ok) {
             throw new Error('Failed to fetch collections');
