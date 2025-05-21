@@ -126,20 +126,81 @@
             initializeEventListeners();
         });
         
+        // Helper function to calculate learning progress
+        function calculateProgress(collection) {
+            if (!collection.pairs || collection.pairs.length === 0) {
+                return {
+                    totalWords: 0,
+                    learnedWords: 0,
+                    progressPercent: 0
+                };
+            }
+            
+            const totalWords = collection.pairs.length;
+            const learnedWords = collection.pairs.filter(pair => pair.interval >= 4).length;
+            const progressPercent = Math.round((learnedWords / totalWords) * 100) || 0;
+            
+            return {
+                totalWords,
+                learnedWords,
+                progressPercent
+            };
+        }
+
         // Function to load collections
         async function loadCollections() {
             showLoading();
             
             try {
                 // Fetch collections from API
-                allCollections = await getCollections();
+                const collections = await getCollections();
+                console.log('Fetched collections:', collections);
+                
+                // If no collections, show empty state
+                if (!collections || collections.length === 0) {
+                    allCollections = [];
+                    hideLoading();
+                    emptyState.style.display = 'flex';
+                    return;
+                }
+                
+                // Process each collection to include progress data
+                allCollections = await Promise.all(collections.map(async (collection) => {
+                    try {
+                        // Use the pre-calculated values from the API
+                        const totalWords = collection.total_words || 0;
+                        const learnedWords = collection.learned_words || 0;
+                        const progressPercent = collection.progress_percent || 0;
+                        
+                        return {
+                            id: collection.id,
+                            name: collection.name,
+                            source_language: collection.source_language,
+                            target_language: collection.target_language,
+                            created_at: collection.created_at,
+                            totalWords,
+                            learnedWords,
+                            progressPercent
+                        };
+                    } catch (error) {
+                        console.error(`Error processing collection ${collection.id}:`, error);
+                        return {
+                            ...collection,
+                            totalWords: 0,
+                            learnedWords: 0,
+                            progressPercent: 0
+                        };
+                    }
+                }));
+                
+                console.log('Processed collections:', allCollections);
                 
                 // Apply current filter and search
                 applyFilters();
                 
             } catch (error) {
                 console.error('Error loading collections:', error);
-                showToast('Fehler beim Laden der Sammlungen.', 'error');
+                showToast('Fehler beim Laden der Sammlungen. Bitte versuche es später erneut.', 'error');
                 
                 // Show empty state
                 hideLoading();
@@ -151,30 +212,55 @@
         function applyFilters() {
             // Get search query
             const searchQuery = searchInput.value.toLowerCase().trim();
+            const now = new Date();
+            const sevenDaysAgo = new Date(now);
+            sevenDaysAgo.setDate(now.getDate() - 7);
             
             // Filter collections
             filteredCollections = allCollections.filter(collection => {
-                const [name, sourceLang, targetLang, totalLearned, progressPercent] = collection;
+                const name = collection.name || '';
+                const sourceLang = collection.source_language || '';
+                const targetLang = collection.target_language || '';
+                const createdAt = collection.created_at || new Date().toISOString();
+                const progressPercent = collection.progressPercent || 0;
                 
                 // Apply search filter
-                const matchesSearch = name.toLowerCase().includes(searchQuery) || 
-                                    sourceLang.toLowerCase().includes(searchQuery) || 
-                                    targetLang.toLowerCase().includes(searchQuery);
+                const matchesSearch = name.toString().toLowerCase().includes(searchQuery) || 
+                                    sourceLang.toString().toLowerCase().includes(searchQuery) || 
+                                    targetLang.toString().toLowerCase().includes(searchQuery);
                 
                 // Apply status filter
                 let matchesFilter = true;
                 if (currentFilter === 'recent') {
                     // Show collections created in the last 7 days
-                    const creationDate = new Date(collection[7]); // collection[7] is the date
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    matchesFilter = creationDate >= sevenDaysAgo;
+                    try {
+                        const creationDate = new Date(createdAt);
+                        matchesFilter = creationDate >= sevenDaysAgo;
+                    } catch (e) {
+                        console.error('Error parsing date:', createdAt, e);
+                        matchesFilter = false;
+                    }
                 } else if (currentFilter === 'progress') {
                     // Show collections with progress between 1% and 99%
                     matchesFilter = progressPercent > 0 && progressPercent < 100;
                 }
                 
                 return matchesSearch && matchesFilter;
+            });
+            
+            // Sort collections by progress (in progress first, then by name)
+            filteredCollections.sort((a, b) => {
+                const aProgress = a.progressPercent || 0;
+                const bProgress = b.progressPercent || 0;
+                const aName = (a.name || '').toString();
+                const bName = (b.name || '').toString();
+                
+                // If both have progress, sort by progress (descending)
+                if (aProgress > 0 || bProgress > 0) {
+                    return bProgress - aProgress;
+                }
+                // Otherwise sort by name
+                return aName.localeCompare(bName);
             });
             
             // Render filtered collections
@@ -200,13 +286,28 @@
                 collectionCard.className = 'collection-card';
                 collectionCard.dataset.id = collection[7]; // collection[7] is the ID
                 
-                // Format: [name, sourceLang, targetLang, totalLearned, progressPercent, learnedRatio, totalWords, collectionId, date]
-                const [name, sourceLang, targetLang, totalLearned, progressPercent, learnedRatio, totalWords] = collection;
+                // Extract collection data
+                const id = collection[7] || collection.id;
+                const name = collection[0] || collection.name || 'Unbenannte Sammlung';
+                const sourceLang = collection[1] || collection.source_language || 'Deutsch';
+                const targetLang = collection[2] || collection.target_language || 'Koreanisch';
+                const totalWords = collection[6] || collection.totalWords || 0;
+                const learnedWords = collection[3] || collection.learned_words || 0;
+                const progressPercent = Math.min(100, Math.max(0, 
+                    collection[4] || collection.progressPercent || 0));
                 
                 // Format progress text
-                const progressText = totalWords > 0 ? 
-                    `${totalLearned}/${totalWords} Wörter gelernt (${progressPercent}%)` : 
-                    'Keine Wörter hinzugefügt';
+                let progressText;
+                if (totalWords === 0) {
+                    progressText = 'Keine Wörter hinzugefügt';
+                } else if (learnedWords === 0) {
+                    progressText = 'Noch nicht gelernt';
+                } else {
+                    progressText = `${learnedWords} von ${totalWords} Wörtern gelernt (${Math.round(progressPercent)}%)`;
+                }
+                
+                // Ensure progress is between 0 and 100
+                const displayProgress = progressPercent;
                 
                 // Set card HTML
                 collectionCard.innerHTML = `
@@ -215,16 +316,16 @@
                         <div class="collection-languages">${sourceLang} → ${targetLang}</div>
                         <div class="collection-progress">
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                                <div class="progress-fill" style="width: ${Math.min(100, Math.max(0, progressPercent))}%"></div>
                             </div>
                             <div class="progress-text">${progressText}</div>
                         </div>
                     </div>
                     <div class="collection-actions">
-                        <button class="action-btn learn-btn" data-id="${collection[7]}" title="Lernen starten">
+                        <button class="action-btn learn-btn" data-id="${id}" title="Lernen starten">
                             <i class="fas fa-graduation-cap"></i>
                         </button>
-                        <button class="action-btn delete-btn" data-id="${collection[7]}" data-name="${name}" title="Sammlung löschen">
+                        <button class="action-btn delete-btn" data-id="${id}" data-name="${name}" title="Sammlung löschen">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>

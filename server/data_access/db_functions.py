@@ -301,35 +301,119 @@ def update_pair(
         collection_id: int,
         pair_id: int,
         known: bool
-) -> None:
-    sql: str = """
-    SELECT interval
+) -> bool:
+    """
+    Update the learning status of a vocabulary pair using SM-2 algorithm
+    
+    Args:
+        collection_id: ID of the collection
+        pair_id: ID of the vocabulary pair
+        known: Whether the word was known or not
+    
+    Returns:
+        bool: True if update was successful, False otherwise
+    """
+    from datetime import datetime, timedelta
+    
+    # First, get the current pair data
+    sql = """
+    SELECT id, interval, next_review
     FROM vocabulary_pairs
     WHERE collection_id = %s
     AND id = %s
+    AND status != %s
     LIMIT 1;
     """
-
-    params: tuple = (
-        collection_id,
-        pair_id
-    )
-
-    rows: list[tuple] = execute_query(
-        sql=sql,
-        params=params
-    )
-
-    interval: int = rows[0][0] if rows else None
-
-    new_interval: int = interval + 1 if known else INTERVAL_RESET
     
-    change_pair(
-        collection_id=collection_id,
-        pair_id=pair_id,
-        columns=['interval'],
-        values=[new_interval]
-    )
+    try:
+        # Get current pair data
+        pair = execute_query_one(
+            sql,
+            (collection_id, pair_id, STATUS_DELETED)
+        )
+        
+        if not pair:
+            print(f"Pair {pair_id} not found in collection {collection_id} or already deleted")
+            return False
+            
+        current_interval = pair.get('interval', 0)
+        now = datetime.now()
+        
+        # SM-2 Algorithm
+        if known:
+            # If the word was known, increase the interval
+            if current_interval == 0:
+                new_interval = 1
+            elif current_interval == 1:
+                new_interval = 2
+            elif current_interval == 2:
+                new_interval = 4
+            elif current_interval == 3:
+                new_interval = 4
+            else:  # current_interval >= 4
+                new_interval = current_interval + 1
+        else:
+            # If the word was not known, reset the interval
+            new_interval = 0
+        
+        # Calculate next review date based on the new interval
+        if new_interval == 0:
+            days_to_add = 1  # Review tomorrow
+        elif new_interval == 1:
+            days_to_add = 1  # 1 day later
+        elif new_interval == 2:
+            days_to_add = 3  # 3 days later
+        elif new_interval == 3:
+            days_to_add = 7  # 1 week later
+        elif new_interval == 4:
+            days_to_add = 14  # 2 weeks later
+        else:
+            days_to_add = new_interval * 7  # Number of weeks
+        
+        next_review = (now + timedelta(days=days_to_add)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        
+        # Update the pair with new interval and next review date
+        update_sql = """
+        UPDATE vocabulary_pairs
+        SET 
+            interval = %s,
+            next_review = %s,
+            updated_at = %s
+        WHERE id = %s 
+        AND collection_id = %s
+        RETURNING id;
+        """
+        
+        result = execute_query_one(
+            update_sql,
+            (
+                new_interval,
+                next_review,
+                now,
+                pair_id,
+                collection_id
+            )
+        )
+        
+        if not result:
+            print(f"Failed to update pair {pair_id} in collection {collection_id}")
+            return False
+            
+        # Add to history
+        try:
+            add_history(collection_id, pair_id)
+        except Exception as e:
+            print(f"Warning: Could not add to history: {e}")
+            # Don't fail if history can't be updated
+            
+        return True
+        
+    except Exception as e:
+        print(f"Error in update_pair for pair {pair_id}: {str(e)}")
+        print(traceback.format_exc())
+        return False
 
 # start lerning
 def start_learning(

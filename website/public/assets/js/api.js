@@ -47,7 +47,27 @@ async function getCollections() {
         if (!response.ok) {
             throw new Error('Failed to fetch collections');
         }
-        return await response.json();
+        const data = await response.json();
+        
+        // Convert array response to array of objects and filter out collections with status 99
+        if (Array.isArray(data)) {
+            return data
+                .filter(collectionArray => collectionArray[5] !== 99) // Filter out status 99
+                .map(collectionArray => ({
+                    id: collectionArray[7],
+                    name: collectionArray[0],
+                    source_language: collectionArray[1],
+                    target_language: collectionArray[2],
+                    learned_words: collectionArray[3],
+                    progress_percent: parseFloat(collectionArray[4]) || 0,
+                    status: collectionArray[5] || 0,
+                    total_words: collectionArray[6],
+                    created_at: collectionArray[8] || new Date().toISOString()
+                }));
+        }
+        
+        console.warn('Unexpected collections response format:', data);
+        return [];
     } catch (error) {
         console.error('Error fetching collections:', error);
         showToast('Failed to load collections. Please try again.', 'error');
@@ -75,7 +95,24 @@ async function getPairs(collectionId) {
         if (!response.ok) {
             throw new Error('Failed to fetch pairs');
         }
-        return await response.json();
+        const data = await response.json();
+        
+        // Convert array response to array of objects
+        if (Array.isArray(data)) {
+            return data.map(pairArray => ({
+                id: pairArray[0],
+                source_word: pairArray[1],
+                target_word: pairArray[2],
+                interval: pairArray[3] || 0,
+                next_review: pairArray[4],
+                created_at: pairArray[5],
+                updated_at: pairArray[6],
+                collection_id: pairArray[7]
+            }));
+        }
+        
+        console.warn('Unexpected pairs response format:', data);
+        return [];
     } catch (error) {
         console.error('Error fetching pairs:', error);
         showToast('Failed to load word pairs. Please try again.', 'error');

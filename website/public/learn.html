@@ -107,14 +107,17 @@
                 // Fetch all pairs for the collection
                 const pairsData = await getPairs(collectionId);
                 
-                // Get only pairs that are not learned yet
-                const unlearned = pairsData.filter(pair => !pair[3]);
+                // Get pairs that are not learned yet (interval < 4)
+                const unlearned = pairsData.filter(pair => {
+                    const interval = pair.interval || pair[3] || 0;
+                    return interval < 4;
+                });
                 
                 if (unlearned.length === 0) {
                     // All pairs are already learned
                     loadingContainer.style.display = 'none';
                     completionState.style.display = 'flex';
-                    document.getElementById('completionMessage').textContent = 'All Words Learned!';
+                    document.getElementById('completionMessage').textContent = 'Alle Wörter gelernt!';
                 } else {
                     // Shuffle pairs for randomized learning
                     currentPairs = unlearned.sort(() => Math.random() - 0.5);
@@ -146,7 +149,9 @@
             }
             
             const pair = currentPairs[currentIndex];
-            const [pairId, sourceWord, targetWord] = pair;
+            const pairId = pair.id || pair[0];
+            const sourceWord = pair.source_word || pair[1] || '';
+            const targetWord = pair.target_word || pair[2] || '';
             
             // Reset to showing source word
             isShowingTranslation = false;
@@ -164,7 +169,8 @@
             if (currentIndex >= currentPairs.length) return;
             
             const pair = currentPairs[currentIndex];
-            const [, sourceWord, targetWord] = pair;
+            const sourceWord = pair.source_word || pair[1] || '';
+            const targetWord = pair.target_word || pair[2] || '';
             
             if (isShowingTranslation) {
                 // Show source word
@@ -186,7 +192,7 @@
             if (currentIndex >= currentPairs.length) return;
             
             const pair = currentPairs[currentIndex];
-            const [pairId] = pair;
+            const pairId = pair.id || pair[0];
             
             try {
                 // Mark pair as learned

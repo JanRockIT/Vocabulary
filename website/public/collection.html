@@ -222,7 +222,12 @@
                     
                     // Add pairs to table
                     pairsData.forEach(pair => {
-                        const [pairId, sourceWord, targetWord, learned] = pair;
+                        const pairId = pair.id || pair[0];
+                        const sourceWord = pair.source_word || pair[1] || '';
+                        const targetWord = pair.target_word || pair[2] || '';
+                        const interval = pair.interval || pair[3] || 0;
+                        const learned = interval >= 4; // Consider learned if interval is 4 or higher
+                        
                         const row = document.createElement('tr');
                         row.dataset.id = pairId;
                         
@@ -231,13 +236,13 @@
                             <td>${targetWord}</td>
                             <td>
                                 <span class="pair-status ${learned ? 'learned' : 'not-learned'}">
-                                    ${learned ? 'Learned' : 'Not Learned'}
+                                    ${learned ? 'Gelernt' : 'Noch nicht gelernt'}
                                 </span>
                             </td>
                             <td>
                                 <div class="pair-actions">
-                                    <i class="fas fa-edit action-icon" title="Edit Pair"></i>
-                                    <i class="fas fa-trash action-icon" title="Delete Pair"></i>
+                                    <i class="fas fa-edit action-icon" title="Bearbeiten"></i>
+                                    <i class="fas fa-trash action-icon" title="Löschen"></i>
                                 </div>
                             </td>
                         `;

@@ -349,26 +349,85 @@ def edit_pair():
 @app.route('/pair/update', methods=['POST'])
 @handle_errors
 def learn_pair():
-    """Aktualisiert den Lernstatus eines Vokabelpaares"""
+    """
+    Updates the learning status of a vocabulary pair
+    
+    Request body should contain:
+    - collection_id: ID of the collection
+    - pair_id: ID of the vocabulary pair
+    - known: boolean indicating if the word was known
+    
+    Returns:
+    - 200: Success with updated pair data
+    - 400: Missing or invalid required fields
+    - 404: Collection or pair not found
+    - 500: Internal server error
+    """
     data = request.get_json()
     
+    # Validate required fields
     required_fields = ['collection_id', 'pair_id', 'known']
-    if not all(field in data for field in required_fields):
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
         return jsonify({
             'status': 'error',
-            'message': f'Missing required fields. Required: {required_fields}'
+            'message': f'Missing required fields: {missing_fields}'
+        }), 400
+        
+    collection_id = data['collection_id']
+    pair_id = data['pair_id']
+    known = data['known']
+    
+    # Validate data types
+    try:
+        collection_id = int(collection_id)
+        pair_id = int(pair_id)
+        known = bool(known)
+    except (ValueError, TypeError):
+        return jsonify({
+            'status': 'error',
+            'message': 'Invalid data types. collection_id and pair_id must be integers, known must be boolean'
         }), 400
     
-    db_update_pair(
-        data['collection_id'],
-        data['pair_id'],
-        data['known']
-    )
-    
-    return jsonify({
-        'status': 'success',
-        'message': 'Pair learning status updated'
-    })
+    # Update the pair's learning status
+    try:
+        success = db_update_pair(collection_id, pair_id, known)
+        
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to update learning status. The pair may not exist or may have been deleted.'
+            }), 404
+            
+        # Get the updated pair data to return to the client
+        updated_pair = db_get_pair(collection_id, pair_id)
+        if not updated_pair:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to retrieve updated pair data'
+            }), 500
+            
+        return jsonify({
+            'status': 'success',
+            'message': 'Learning status updated successfully',
+            'data': {
+                'pair_id': pair_id,
+                'collection_id': collection_id,
+                'interval': updated_pair.get('interval'),
+                'next_review': updated_pair.get('next_review').isoformat() if updated_pair.get('next_review') else None,
+                'status': 'learned' if known else 'learning',
+                'updated_at': updated_pair.get('updated_at').isoformat() if updated_pair.get('updated_at') else None
+            }
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in learn_pair: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({
+            'status': 'error',
+            'message': 'An error occurred while updating the learning status',
+            'error': str(e)
+        }), 500
 
 @app.route('/collection/learn', methods=['POST'])
 @handle_errors
